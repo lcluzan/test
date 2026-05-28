@@ -51,8 +51,8 @@ t_httpResponse HttpHandler::setHttpResponse(t_httpRequest request)
   }
   else if (request.path.find("/cgi-bin/") == 0)
   {
-    // return CgiHandler::executeCgi(request.path, request);
-      std::cout << "Warging: cgi detect not implemente methode " << std::endl;
+    return CgiHandler::executeCgi(request.path, request);
+    std::cout << "Warging: cgi detect not implemente methode " << std::endl;
   }
   else if (HttpHandler::isStaticFile(request.path))
   {

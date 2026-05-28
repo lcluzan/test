@@ -83,8 +83,6 @@ static void inf_loop(std::vector<int> ports)
     int ret = loop.waitForActivity();
     if (ret == -1)
     {
-      if(!g_should_exit)
-        break ;
       std::cerr << COLOR_RED << "Error: poll() failed (interrupted system call?)" << COLOR_RESET << std::endl;
       break;
     }
@@ -108,9 +106,11 @@ static void signal_handler(int signal)
 static void initVerctorOfPort(std::vector<int>& ports)
 {
   ports.push_back(8080);
-  //ports.push_back(8081);
-  //ports.push_back(8082);
+  ports.push_back(8081);
+  ports.push_back(8082);
 }
+
+/* ==================================================================================================*/
 
 static void print_http_request(const t_httpRequest& request) {
     // Affichage de la méthode, du chemin et de la version
@@ -140,16 +140,4 @@ static void print_http_request(const t_httpRequest& request) {
 
     std::cout << COLOR_CYAN << "===================\n" << COLOR_RESET << std::endl;
 }
-/*
 
-while (true)
-{
-
-  Attendre une activité sur les sockets (timeout infini)
-
-  Parcourir tous les descripteurs surveillés
-
-  Vérifier si c'est un socket serveur (nouvelle connexion)
-    Sinon, c'est un client existant (données à lire)
-}
-*/

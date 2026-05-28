@@ -30,34 +30,42 @@ std::vector<std::string> CgiHandler::buildCgiEnv(const t_httpRequest& request, c
     return env;
 }
 
+
 t_httpResponse CgiHandler::executeCgi(const std::string& path, const t_httpRequest& request) {
     t_httpResponse response;
-    int pipe_in[2];
-    int pipe_out[2];
+    int pipe_in[2];  // Parent écrit dans pipe_in[1], enfant lit depuis pipe_in[0]
+    int pipe_out[2]; // Parent lit depuis pipe_out[0], enfant écrit dans pipe_out[1]
 
     if (pipe(pipe_in) == -1 || pipe(pipe_out) == -1) {
         response.status = 500;
-        response.body = "<html><body>500 Internal Server Error</body></html>";
+        response.body = "<html><body>500 Internal Server Error: pipe failed</body></html>";
         return response;
     }
 
     pid_t pid = fork();
-
     if (pid == -1) {
+        close(pipe_in[0]); close(pipe_in[1]);
+        close(pipe_out[0]); close(pipe_out[1]);
         response.status = 500;
+        response.body = "<html><body>500 Internal Server Error: fork failed</body></html>";
         return response;
     }
 
     if (pid == 0) {
-        // --- ENFANT ---
-        dup2(pipe_in[0], STDIN_FILENO);
-        dup2(pipe_out[1], STDOUT_FILENO);
-        close(pipe_in[1]); close(pipe_in[0]);
-        close(pipe_out[0]); close(pipe_out[1]);
+        // --- ENFANT (CGI) ---
+        close(pipe_in[1]); // Ferme l'extrémité d'écriture du parent
+        close(pipe_out[0]); // Ferme l'extrémité de lecture du parent
 
-        std::string full_path = "./sources/www" + path; 
+        dup2(pipe_in[0], STDIN_FILENO);   // Le CGI lit depuis STDIN (lié à pipe_in[0])
+        dup2(pipe_out[1], STDOUT_FILENO); // Le CGI écrit dans STDOUT (lié à pipe_out[1])
+
+        close(pipe_in[0]);
+        close(pipe_out[1]);
+
+        std::string full_path = "./sources/www" + path;
         std::vector<std::string> env_strings = buildCgiEnv(request, full_path);
-        
+
+        // Alloue envp
         char **envp = new char*[env_strings.size() + 1];
         for (size_t i = 0; i < env_strings.size(); ++i) {
             envp[i] = new char[env_strings[i].size() + 1];
@@ -65,41 +73,58 @@ t_httpResponse CgiHandler::executeCgi(const std::string& path, const t_httpReque
         }
         envp[env_strings.size()] = NULL;
 
-        char *args[] = { (char*)"/opt/homebrew/bin/php-cgi", (char*)full_path.c_str(), NULL }; //change later if needed
-        
+        // Alloue args
+        char *script_path = strdup(full_path.c_str());
+        char *args[] = { (char*)"/usr/bin/php-cgi", script_path, NULL };
+
         execve(args[0], args, envp);
 
+        // Si execve échoue
         for (size_t i = 0; i < env_strings.size(); ++i) delete[] envp[i];
         delete[] envp;
-        exit(1); 
+        free(script_path);
+        exit(1);
     } else {
-        // --- PARENT ---
-        close(pipe_in[0]);
-        close(pipe_out[1]);
+        // --- PARENT (Webserv) ---
+        close(pipe_in[0]); // Ferme l'extrémité de lecture de l'enfant
+        close(pipe_out[1]); // Ferme l'extrémité d'écriture de l'enfant
 
+        // Envoie le corps de la requête POST au CGI
         if (!request.body.empty()) {
-            write(pipe_in[1], request.body.c_str(), request.body.size());
+            if (write(pipe_in[1], request.body.c_str(), request.body.size()) == -1) {
+                close(pipe_in[1]);
+                close(pipe_out[0]);
+                waitpid(pid, NULL, 0);
+                response.status = 500;
+                response.body = "<html><body>500 Internal Server Error: write failed</body></html>";
+                return response;
+            }
         }
-        close(pipe_in[1]); 
+        close(pipe_in[1]); // Plus besoin d'écrire
 
+        // Lis la sortie du CGI
         char buffer[4096];
         std::string cgi_output;
-        int bytes_read;
+        ssize_t bytes_read;
         while ((bytes_read = read(pipe_out[0], buffer, sizeof(buffer) - 1)) > 0) {
             buffer[bytes_read] = '\0';
             cgi_output += buffer;
         }
         close(pipe_out[0]);
 
-        waitpid(pid, NULL, 0);
+        waitpid(pid, NULL, 0); // Attend la fin du CGI
 
+        // Traite la réponse
         size_t header_end = cgi_output.find("\r\n\r\n");
         if (header_end != std::string::npos) {
             response.status = 200;
             response.body = cgi_output.substr(header_end + 4);
         } else {
-            response.status = 502;
+            // Si pas de headers, on considère que tout est le corps
+            response.status = 200;
+            response.body = cgi_output;
         }
         return response;
     }
 }
+
