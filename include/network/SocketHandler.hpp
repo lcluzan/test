@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   SocketHandler.hpp                                  :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: lcluzan <lcluzan@student.42.fr>            +#+  +:+       +#+        */
+/*   By: tjacquel <tjacquel@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/03/25 06:32:48 by bchallat          #+#    #+#             */
-/*   Updated: 2026/05/25 15:35:32 by lcluzan          ###   ########.fr       */
+/*   Updated: 2026/04/17 15:19:22 by tjacquel         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -42,10 +42,6 @@ class SocketHandler {
     ssize_t           readFromSocket(int fd, char* buffer, size_t size);
     ssize_t           writeToSocket(int fd, const char* buffer, size_t size);
 };
-
-
-void setNonBlocking(int fd);
-
 
 #endif/* SOCKET_HANDLER_HPP_INCLUDED */
 

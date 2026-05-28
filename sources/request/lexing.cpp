@@ -12,6 +12,39 @@
 
 #include <request/HttpHandler.hpp>
 
+#define RUN_WITH_SERVER 0
+
+#if RUN_WITH_SERVER
+static std::string typeToString(t_type type)
+{
+    switch (type) {
+        case METHOD: return "METHOD";
+        case PATH: return "PATH";
+        case VERSION: return "VERSION";
+        case HEADER_KEY: return "HEADER_KEY";
+        case HEADER_VALUE: return "HEADER_VALUE";
+        case COLON: return "COLON";
+        case CRLF: return "CRLF";
+        case BODY: return "BODY";
+        case WHITESPACE: return "WHITESPACE";
+        case UNKNOWN: return "UNKNOWN";
+        default: return "UNKNOWN";
+    }
+}
+
+static void printTokens(const std::vector<t_token>& lexer)
+{
+    for (std::vector<t_token>::const_iterator it = lexer.begin(); it != lexer.end(); ++it)
+    {
+        const t_token& token = *it;
+        std::cout << "Token type: " << typeToString(token.type) << ", value: \"" << token.value << "\"" << std::endl;
+    }
+}
+
+#endif
+
+/* =========================================================================== */
+
 static void lx_tokenizer(std::vector<t_token>& lexer)
 {
   int curr = lexer.size() - 1;
@@ -111,7 +144,10 @@ std::vector<t_token> HttpHandler::lexing(const std::string raw_request)
     lx_write_value(raw_request, index, lexer);
     lx_tokenizer(lexer);
   }
-
+  
+#if RUN_WITH_SERVER
+  printTokens(lexer);
+#endif  
   return ( lexer );
 }
 

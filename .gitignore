@@ -42,3 +42,12 @@ Thumbs.db
 #############
 t_unit
 webserv
+
+# obs #
+############
+wiki/.obsidian/
+wiki/.obsidian/appearance.json
+wiki/.obsidian/app.json
+wiki/.obsidian/core-plugins.json
+wiki/.obsidian/workspace.json
+
