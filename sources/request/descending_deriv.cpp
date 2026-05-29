@@ -14,6 +14,8 @@
 
 static bool dd_first_line(const std::vector<t_token>& lexer)
 {
+  if (lexer.size() < 5)
+    return ( false );
   if (lexer[0].type != METHOD)
     return ( false );
   if (lexer[2].type != PATH)
@@ -29,6 +31,8 @@ static bool dd_header_line(const std::vector<t_token>& lexer)
   
   while (index < lexer.size() && lexer[index].type != BODY)
   {
+    if (index + 3 >= lexer.size())
+      return (false);
     if(lexer[index].type != HEADER_KEY)
       return (false);
     if(lexer[index + 1].type != WHITESPACE)

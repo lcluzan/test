@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test de ton nouveau CGI</title>
+    <link rel="stylesheet" href="styles/style.css">
+</head>
+<body>
+    <header>
+        <h1>Test du CGI (POST)</h1>
+    </header>
+    <nav>
+        <a href="index.html">Accueil</a>
+        <a href="about.html">À propos</a>
+        <a href="services.html">Services</a>
+        <a href="blog.html">Blog</a>
+        <a href="contact.html">Contact</a>
+        <a href="test_cgi.html">FORM</a>
+    </nav>
+    <main>
+        <h2>Envoyer des données au script PHP</h2>
+        <p>Ce formulaire va déclencher le fork() et l'execve() de ton serveur.</p>
+
+        <form action="/cgi-bin/form_processor.php" method="POST" style="background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <label for="nom"><strong>Ton prénom :</strong></label><br>
+            <input type="text" id="nom" name="nom" required style="margin: 10px 0; padding: 8px; width: 100%; box-sizing: border-box;"><br>
+
+            <label for="message"><strong>Un petit message :</strong></label><br>
+            <textarea id="message" name="message" rows="4" required style="margin: 10px 0; padding: 8px; width: 100%; box-sizing: border-box;"></textarea><br>
+
+            <button type="submit" style="background-color: #4CAF50; color: white; padding: 10px 15px; border: none; cursor: pointer; border-radius: 4px;">Exécuter le CGI</button>
+        </form>
+    </main>
+</body>
+</html>

@@ -143,13 +143,14 @@ void EventLoop::removeClient(int fd)
 
 void EventLoop::cleanup() 
 {
+  const std::vector<ClientInfo*>& clients = _client_manager.getClients();
+  for (size_t i = 0; i < clients.size(); i++) 
+  {
+    _client_manager.removeClient(clients[i]->getFileDescriptor());
+  }
   for (size_t i = 0; i < _server_fds.size(); i++) 
   {
     _socket_handler.closeSocket(_server_fds[i]);
   }
-  const std::vector<ClientInfo*>& clients = _client_manager.getClients();
-  for (size_t i = 0; i < clients.size(); i++) 
-  {
-    _socket_handler.closeSocket(clients[i]->getFileDescriptor());
-  }
+  
 }

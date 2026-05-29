@@ -1,11 +1,12 @@
-#include "../../include/cgi/CgiHandler.hpp"
+//#include "../../include/cgi/CgiHandler.hpp"
+#include <request/HttpHandler.hpp>
 #include <unistd.h>
 #include <sys/wait.h>
 #include <cstring>
 #include <cstdlib>
 #include <sstream>
 
-std::vector<std::string> CgiHandler::buildCgiEnv(const t_httpRequest& request, const std::string& script_path) {
+std::vector<std::string> HttpHandler::buildCgiEnv(const t_httpRequest& request, const std::string& script_path) {
     std::vector<std::string> env;
 
     env.push_back("REQUEST_METHOD=" + request.method);
@@ -31,7 +32,7 @@ std::vector<std::string> CgiHandler::buildCgiEnv(const t_httpRequest& request, c
 }
 
 
-t_httpResponse CgiHandler::executeCgi(const std::string& path, const t_httpRequest& request) {
+t_httpResponse HttpHandler::executeCgi(const std::string& path, const t_httpRequest& request) {
     t_httpResponse response;
     int pipe_in[2];  // Parent écrit dans pipe_in[1], enfant lit depuis pipe_in[0]
     int pipe_out[2]; // Parent lit depuis pipe_out[0], enfant écrit dans pipe_out[1]
