@@ -6,7 +6,7 @@
 #include <cstdlib>
 #include <sstream>
 
-std::vector<std::string> HttpHandler::buildCgiEnv(const t_httpRequest& request, const std::string& script_path) {
+std::vector<std::string> HttpHandler::buildCgiEnv(const t_httpRequest& request, const std::string& script_path, const std::string& query_string) {
     std::vector<std::string> env;
 
     env.push_back("REQUEST_METHOD=" + request.method);
@@ -16,6 +16,7 @@ std::vector<std::string> HttpHandler::buildCgiEnv(const t_httpRequest& request, 
     env.push_back("REDIRECT_STATUS=200");
     env.push_back("GATEWAY_INTERFACE=CGI/1.1");
     env.push_back("SERVER_SOFTWARE=Webserv/1.0");
+    env.push_back("QUERY_STRING" + query_string); // Add QUERY_STRING for GET request
 
     if (request.method == "POST") {
         std::stringstream ss;
@@ -27,7 +28,16 @@ std::vector<std::string> HttpHandler::buildCgiEnv(const t_httpRequest& request, 
             env.push_back("CONTENT_TYPE=" + it->second);
         }
     }
-
+    //Give all the headers to Cgi
+    for (std::map<std::string, std::string>::const_iterator it = request.headers.begin(); it !=request.headers.end(); ++it) {
+        std::string header_name = "HTTP_" + it->first;
+        //
+        for (size_t i = 0; i < header_name.length(); ++i) {
+            if (header_name[i] == '-') header_name[i] = '_';
+            header_name[i] = std::toupper(header_name[i]);
+        }
+        env.push_back(header_name + "=" + it->second);
+    }
     return env;
 }
 
@@ -76,8 +86,17 @@ t_httpResponse HttpHandler::executeCgi(const std::string& path, const t_httpRequ
         close(pipe_in[0]);
         close(pipe_out[1]);
 
+        std::string actual_path = path;
+        std::string query_string = "";
+        size_t question_mark_pos = path.find('?');
+
+        if(question_mark_pos != std::string::npos){
+            actual_path = path.substr(0, question_mark_pos);
+            query_string = path.substr(question_mark_pos + 1);
+        }
+
         std::string full_path = "./sources/www" + path;
-        std::vector<std::string> env_strings = buildCgiEnv(request, full_path);
+        std::vector<std::string> env_strings = buildCgiEnv(request, full_path, query_string);
 
         // Alloue envp
         char **envp = new char*[env_strings.size() + 1];

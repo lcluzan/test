@@ -6,7 +6,7 @@
 /*   By: lcluzan <lcluzan@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/22 11:31:58 by bchallat          #+#    #+#             */
-/*   Updated: 2026/06/01 12:19:46 by ton_utilisate    ###   ########.fr       */
+/*   Updated: 2026/06/01 14:14:38 by lcluzan          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -42,7 +42,7 @@ class HttpHandler {
 
   private:
     static t_httpResponse executeCgi(const std::string& path, const t_httpRequest& request);
-    static std::vector<std::string> buildCgiEnv(const t_httpRequest& request, const std::string& script_path);
+    static std::vector<std::string> buildCgiEnv(const t_httpRequest& request, const std::string& script_path, const std::string& query_string);
     static std::string getCgiInterpreter(const std::string& path);
 
 
