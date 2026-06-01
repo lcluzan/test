@@ -52,6 +52,12 @@ void ClientManager::removeClient(int fd)
   ClientInfo* client = it->second;
   _fileDescriptorClient.erase(it);
 
+  if (close(fd) == -1)
+    std::cerr << "close() " << std::endl;
+  else
+    std::cout << COLOR_CYAN <<"(Log Server) : close client fd=" << fd << COLOR_RESET << std::endl;
+
+
   std::vector<ClientInfo*>::iterator vec_it = std::find(_clients.begin(), _clients.end(), client);
   if (vec_it != _clients.end())
   {

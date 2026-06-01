@@ -1,18 +1,23 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   lexing.cpp                                         :+:      :+:    :+:   */
+/*   parsingHttp.cpp                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: tjacquel <tjacquel@student.42.fr>          +#+  +:+       +#+        */
+/*   By: bchallat <bchallat@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/04/07 14:25:13 by bchallat          #+#    #+#             */
-/*   Updated: 2026/04/27 14:14:27 by bchallat         ###   ########.fr       */
+/*   Created: 2026/06/01 11:55:55 by bchallat          #+#    #+#             */
+/*   Updated: 2026/06/01 12:05:21 by ton_utilisate    ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include <request/HttpHandler.hpp>
 
 #define RUN_WITH_SERVER 0
+
+
+/* ========================================================================== */
+/*                              -- LEXER --                                   */
+/* ========================================================================== */
 
 #if RUN_WITH_SERVER
 static std::string typeToString(t_type type)
@@ -151,6 +156,123 @@ std::vector<t_token> HttpHandler::lexing(const std::string raw_request)
   return ( lexer );
 }
 
+/* ========================================================================== */
+/*                        -- DESCENDING_DERIV --                              */
+/* ========================================================================== */
+
+static bool dd_first_line(const std::vector<t_token>& lexer)
+{
+  if (lexer.size() < 5)
+    return ( false );
+  if (lexer[0].type != METHOD)
+    return ( false );
+  if (lexer[2].type != PATH)
+    return ( false );
+  if (lexer[4].type != VERSION)
+    return ( false );
+  return ( true );
+}
+
+static bool dd_header_line(const std::vector<t_token>& lexer)
+{
+  size_t index = 5;
+  
+  while (index < lexer.size() && lexer[index].type != BODY)
+  {
+    if (index + 3 >= lexer.size())
+      return (false);
+    if(lexer[index].type != HEADER_KEY)
+      return (false);
+    if(lexer[index + 1].type != WHITESPACE)
+      return (false);
+    if(lexer[index + 2].type != HEADER_VALUE)
+      return (false);
+    if(lexer[index + 3].type != CRLF)
+      return (false);
+    index += 4;
+  }
+  return ( true );
+}
+
+static bool dd_header_body(const std::vector<t_token>& lexer)
+{
+  size_t index = 0;
+  while (index < lexer.size() && lexer[index].type != BODY)
+    index++;
+  while (index < lexer.size() && lexer[index].type == BODY)
+    index++;
+  if (index != lexer.size())
+    return (false);
+  return (true);
+}
+
+bool  HttpHandler::descending_deriv(std::vector<t_token>& lexer)
+{
+  if (!dd_first_line(lexer))
+    return ( false );
+  if (!dd_header_line(lexer))
+    return ( false );
+  if (!dd_header_body(lexer))
+    return ( false );
+  return ( true );
+}
+
+/* ========================================================================== */
+/*               -- CONSTRUCTOR OF STRUCT HTTP REQUEST --                     */
+/* ========================================================================== */
+
+static void   init_hash_table_header(t_httpRequest& request, std::vector<t_token>& lexer)
+{
+  size_t      index = 0;
+  std::string h_key;
+  std::string h_value;
+
+  while (index + 1 < lexer.size())
+  {
+    if (lexer[index].type == HEADER_KEY)
+    {
+      h_key = lexer[index].value;
+    }
+    else if (lexer[index].type == HEADER_VALUE && !h_key.empty())
+    {
+      h_value = lexer[index].value;
+      request.headers[h_key] = h_value;
+    
+      h_key.clear();
+      h_value.clear();
+    }
+    index++;
+  }
+}
+
+static void   st_write_in_struct(t_httpRequest& request, t_token token)
+{
+  if (token.type == WHITESPACE || token.type == CRLF)
+    return ;
+  else if (token.type == METHOD)
+    request.method = token.value;
+  else if (token.type == PATH)
+    request.path = token.value;
+  else if (token.type == VERSION)
+    request.version = token.value;
+  else if (token.type == BODY)
+    request.body += token.value;
+}
+
+t_httpRequest HttpHandler::struct_http_request(std::vector<t_token>& lexer)
+{
+  size_t        indx = 0;
+  t_httpRequest request;
+
+  while (indx < lexer.size()) 
+  {
+    st_write_in_struct(request, lexer[indx]);
+    indx++;
+  }
+  
+  init_hash_table_header(request, lexer);
+  return (request);
+}
 
 /* ************************************************************************** */
 /*                                                                            */

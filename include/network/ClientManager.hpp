@@ -14,6 +14,7 @@
 #define CLIENT_MANAGER_HPP
 
 #include <map>
+#include <unistd.h>
 #include <vector>
 #include <string>
 #include <iostream>

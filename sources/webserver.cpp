@@ -6,7 +6,7 @@
 /*   By: tjacquel <tjacquel@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/02/25 17:24:16 by bchallat          #+#    #+#             */
-/*   Updated: 2026/04/25 18:12:51 by tjacquel         ###   ########.fr       */
+/*   Updated: 2026/06/01 10:14:50 by ton_utilisate    ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -71,6 +71,12 @@ static void handler_conection(EventLoop &loop)
       print_http_response(response);
       std::string raw_response = response.toString();
       loop.sendResponse(fd, raw_response);
+      if (response.status == 400)
+      {
+        loop.removeClient(fd);
+
+      }
+
     }
   }
 }

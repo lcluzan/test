@@ -31,6 +31,19 @@ std::vector<std::string> HttpHandler::buildCgiEnv(const t_httpRequest& request, 
     return env;
 }
 
+std::string HttpHandler::getCgiInterpreter(const std::string& path) {
+    size_t dot_pos = path.find_last_of(".");
+
+    if (dot_pos != std::string::npos) {
+        std::string ext = path.substr(dot_pos);
+        if (ext == ".php") return "/usr/bin/php-cgi";
+        if (ext == ".py") return "/usr/bin/python3";
+        if (ext == ".pl") return "/usr/bin/perl";
+        if (ext == ".sh") return "/bin/bash";
+    }
+    // Return empty string if no specific interpreter is needed (e.g. for a compiled executable)
+    return "";
+}
 
 t_httpResponse HttpHandler::executeCgi(const std::string& path, const t_httpRequest& request) {
     t_httpResponse response;
@@ -74,16 +87,27 @@ t_httpResponse HttpHandler::executeCgi(const std::string& path, const t_httpRequ
         }
         envp[env_strings.size()] = NULL;
 
-        // Alloue args
+        std::string interpreter = getCgiInterpreter(full_path);
         char *script_path = strdup(full_path.c_str());
-        char *args[] = { (char*)"/usr/bin/php-cgi", script_path, NULL };
+        char *interp_path = interpreter.empty() ? NULL : strdup(interpreter.c_str());
+
+        char *args[3];
+        if (interp_path){
+            args[0] = interp_path;
+            args[1] = script_path;
+            args[2] = NULL;
+        }else{
+            args[0] = script_path;
+            args[1] = NULL;
+            args[2] = NULL;
+        }
 
         execve(args[0], args, envp);
 
-        // Si execve échoue
         for (size_t i = 0; i < env_strings.size(); ++i) delete[] envp[i];
         delete[] envp;
         free(script_path);
+        if (interp_path) free(interp_path);
         exit(1);
     } else {
         // --- PARENT (Webserv) ---
