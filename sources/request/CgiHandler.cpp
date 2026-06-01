@@ -16,7 +16,7 @@ std::vector<std::string> HttpHandler::buildCgiEnv(const t_httpRequest& request, 
     env.push_back("REDIRECT_STATUS=200");
     env.push_back("GATEWAY_INTERFACE=CGI/1.1");
     env.push_back("SERVER_SOFTWARE=Webserv/1.0");
-    env.push_back("QUERY_STRING" + query_string); // Add QUERY_STRING for GET request
+    env.push_back("QUERY_STRING=" + query_string); // Add QUERY_STRING for GET request
 
     if (request.method == "POST") {
         std::stringstream ss;
@@ -95,7 +95,7 @@ t_httpResponse HttpHandler::executeCgi(const std::string& path, const t_httpRequ
             query_string = path.substr(question_mark_pos + 1);
         }
 
-        std::string full_path = "./sources/www" + path;
+        std::string full_path = "./sources/www" + actual_path;
         std::vector<std::string> env_strings = buildCgiEnv(request, full_path, query_string);
 
         // Alloue envp
