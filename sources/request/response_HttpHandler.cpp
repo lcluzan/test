@@ -102,7 +102,7 @@ t_httpResponse HttpHandler::serveStaticFile(const std::string& path)
       return (HandlerErrorHttp(403));
     }
 
-    std::string full_path = "./sources/www/" + path; // Assurez-vous que le chemin est correct
+    std::string full_path = ROOT + path; // Assurez-vous que le chemin est correct
     std::ifstream file(full_path.c_str(), std::ios::binary);
 
     if (!file.is_open())
@@ -151,6 +151,40 @@ bool HttpHandler::isStaticFile(const std::string& path)
         return true;
     }
     return false;
+}
+
+/* ========================================================================== */
+/*                          -- tools of POST METHODE  --                      */
+/* ========================================================================== */
+
+// fonction pour parser le body 
+//
+// fonction pour cree le post 
+//
+// creation de la struct reponsse
+
+t_post_methode HttpHandler::post_parse_header_request(t_httpRequest request)
+{
+  size_t          pos_boundary = 0;
+  t_post_methode  parsing;
+  
+  if (!request.headers["Content-Length"].empty()) {
+
+    parsing.bodyLength = request.headers["Content-Length"];
+    std::cout << " .bodyLength : " << parsing.bodyLength  << std::endl; 
+  }
+
+  pos_boundary = request.headers["Content-Type"].find("boundary=");
+  if (pos_boundary != 0) {
+    
+    parsing.boundary = request.headers["Content-Type"].substr(pos_boundary + 9);
+    std::cout << " .boundary : " << parsing.boundary << std::endl; 
+  }
+  parsing.body = request.body;
+  parsing.body.erase(parsing.body.find(parsing.boundary), parsing.boundary.length());
+  parsing.body.erase(parsing.body.find(parsing.boundary), parsing.boundary.length());
+  std::cout << ".body : " << parsing.body << std::endl;
+  return (parsing);
 }
 
 /* ************************************************************************** */

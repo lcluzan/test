@@ -1,3 +1,7 @@
+
+------geckoformboundary7e1161a0d1cf9f7a342d38051d77b5ceContent-Disposition: form-data; name="file"; filename="Makefile"
+Content-Type: application/octet-stream
+
 # **************************************************************************** #
 #                                                                              #
 #                                                         :::      ::::::::    #
@@ -24,7 +28,7 @@ UNAME := $(shell uname)
 ifeq ($(UNAME), Darwin)
 	ECHO_FLAG	=	echo
 	CC				= clang++
-	FLAG			= -g3 -Wall -Wextra -Werror -std=c++98 
+	FLAG			= -g3 -Wall -Wextra -Werror -std=c++98 -fsanitize=address
 else
 	ECHO_FLAG	= echo -e
 	CC				= c++
@@ -131,3 +135,4 @@ up: all unit_test
 .PHONY: all clean fclean re up unit_test
 
 
+------geckoformboundary7e1161a0d1cf9f7a342d38051d77b5ce--

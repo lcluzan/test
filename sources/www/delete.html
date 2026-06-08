@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Supprimer un fichier</title>
+    <link rel="stylesheet" href="styles/style.css">
+
+</head>
+<body>
+    <header>
+        <h1>Delete</h1>
+    </header>
+    
+    <nav>
+        <a href="index.html">Accueil</a>
+        <a href="about.html">À propos</a>
+        <a href="services.html">Services</a>
+        <a href="blog.html">Blog</a>
+        <a href="test_cgi.html">FORM</a>
+        <a href="upload.html">upload</a>
+        <a href="delete.html">delete</a>
+    </nav>
+
+    <h1>Supprimer un fichier</h1>
+    <input type="text" id="filepath" placeholder="/upload/fichier.txt" required>
+    <button onclick="deleteFile()">Supprimer</button>
+    <div id="result"></div>
+
+    <script>
+        function deleteFile() {
+            const filepath = document.getElementById('filepath').value;
+            const url = '/upload/' + encodeURIComponent(filepath);
+
+            fetch(url, {
+                method: 'DELETE'
+            })
+            .then(response => {
+                if (response.ok) {
+                    document.getElementById('result').innerHTML =
+                        `<p style="color: green;">Fichier supprimé : ${filepath}</p>`;
+                } else {
+                    document.getElementById('result').innerHTML =
+                        `<p style="color: red;">Erreur : ${response.statusText}</p>`;
+                }
+            })
+            .catch(error => {
+                document.getElementById('result').innerHTML =
+                    `<p style="color: red;">Erreur réseau : ${error.message}</p>`;
+            });
+        }
+    </script>
+</body>
+</html>

@@ -3,13 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Blog - Mon WebServer 42</title>
+    <title>Upload de fichier - webServ</title>
     <link rel="stylesheet" href="styles/style.css">
 </head>
+
 <body>
     <header>
-        <h1>Notre Blog</h1>
+        <h1>Upload</h1>
     </header>
+    
     <nav>
         <a href="index.html">Accueil</a>
         <a href="about.html">À propos</a>
@@ -19,16 +21,19 @@
         <a href="upload.html">upload</a>
         <a href="delete.html">delete</a>
     </nav>
-    <main>
-        <h2>Derniers articles</h2>
-        <article>
-            <h3>Premier article</h3>
-            <p>Publié le 8 avril 2026</p>
-            <p>Voici le contenu de notre premier article.</p>
-        </article>
-    </main>
-    <footer>
-        <p>&copy; 2026 - Mon WebServer 42</p>
-    </footer>
+
+    <h1>Uploader un fichier</h1>
+    <p>Sélectionnez un fichier à envoyer au serveur.</p>
+
+    <form action="upload/" method="POST" enctype="multipart/form-data">
+        <div class="form-group">
+            <input type="file" name="file" id="file" required>
+        </div>
+        <button type="submit">Uploader</button>
+    </form>
+
+    <div id="message" class="success" style="display: none;">
+        Fichier uploadé avec succès !
+    </div>
 </body>
 </html>

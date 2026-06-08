@@ -13,6 +13,10 @@
 #ifndef UTILS_HANDLERHTTP_HPP
 #define UTILS_HANDLERHTTP_HPP
 
+/* ========================================================================== */
+/*                           -- parsing structure  --                         */
+/* ========================================================================== */
+
 enum t_type {
 
 	METHOD,
@@ -37,6 +41,10 @@ struct t_token {
 
 };
 
+/* ========================================================================== */
+/*                    -- struct for Http request/response  --                 */
+/* ========================================================================== */
+
 struct t_httpRequest {
 
 	std::string                        method;
@@ -56,6 +64,19 @@ struct t_httpResponse {
   t_httpResponse();
   t_httpResponse(int status, const std::map<std::string, std::string>& headers, const std::string& body);
   std::string toString() const;
+
+};
+
+/* ========================================================================== */
+/*                           -- parsing structure  --                         */
+/* ========================================================================== */
+
+struct t_post_methode {
+  
+  std::string     bodyLength;
+  std::string     nameFile;
+  std::string     boundary;
+  std::string     body;
 
 };
 

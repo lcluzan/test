@@ -6,7 +6,7 @@
 /*   By: lcluzan <lcluzan@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/07 13:48:28 by bchallat          #+#    #+#             */
-/*   Updated: 2026/06/01 11:03:22 by ton_utilisate    ###   ########.fr       */
+/*   Updated: 2026/06/02 10:11:02 by bchallat         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,34 +27,36 @@ t_httpRequest  HttpHandler::setHttpRequest(const std::string& raw_request)
   {
     std::cout << COLOR_YELLOW << "Warging : bad request " << COLOR_RESET << std::endl;
   }
-
+  
   return ( request );
 }
 
-/* ************************************************************************** */
+/* ========================================================================== */
 
 t_httpResponse HttpHandler::setHttpResponse(t_httpRequest request)
 {
 	t_httpResponse                      response;
   std::map<std::string, std::string>  headers;
 
-	if (request.method != "GET" && request.method != "POST" && request.method != "HEAD")
+	if (request.method != "GET" && request.method != "POST" && request.method != "DELETE")
 	{
     return (HandlerErrorHttp(400));
   }
-  else if (request.path == "/")
-  {
-    return HttpHandler::serveStaticFile("index.html");
-  }
-  else if (request.path.find("/cgi-bin/") == 0 ||
-          request.path.find(".php") != std::string::npos ||
-          request.path.find(".py") != std::string::npos)
+  else if (request.path.find("/cgi-bin/") == 0 || request.path.find(".php") != std::string::npos || request.path.find(".py") != std::string::npos)
   {
     return HttpHandler::executeCgi(request.path, request);
   }
-  else if (HttpHandler::isStaticFile(request.path))
+  else if (request.method == "GET")
   {
-    return HttpHandler::serveStaticFile(request.path);
+    return (HttpHandler::handler_methode_get(request));
+  }
+  else if (request.method == "POST")
+  {
+    return (HttpHandler::handler_methode_post(request));
+  }
+  else if (request.method == "DELETE")
+  {
+    return (HttpHandler::handler_methode_delete(request));
   }
   else
   {
@@ -63,9 +65,7 @@ t_httpResponse HttpHandler::setHttpResponse(t_httpRequest request)
 	return ( response );
 }
 
-/* ************************************************************************** */
-
-
+/* ========================================================================== */
 
 t_httpResponse HttpHandler::HandlerErrorHttp(int status)
 {
@@ -85,7 +85,7 @@ t_httpResponse HttpHandler::HandlerErrorHttp(int status)
     body ="<html><body>403 Forbidden</body></html>";
     
   else if (status == 404)
-    body ="<html><body>404 Not Found</body></html>";
+    return (HttpHandler::serveStaticFile("404.html"));
 
   else if (status == 405)
     body ="<html><body>405 Method Not Allowed</body></html>";
@@ -96,6 +96,8 @@ t_httpResponse HttpHandler::HandlerErrorHttp(int status)
   else if (status == 501)
     body ="<html><body>501 Not Implemented</body></html>";
 
+  else if (status == 204)
+    body ="";
 
   oss << body.size();
   headers["Content-Length"] = oss.str();
@@ -103,6 +105,77 @@ t_httpResponse HttpHandler::HandlerErrorHttp(int status)
   return (t_httpResponse(status, headers, body));
 }
 
+/* ========================================================================== */
+/*                          -- HTTP METHODE --                                */
+/* ========================================================================== */
+
+t_httpResponse HttpHandler::handler_methode_get(t_httpRequest& request)
+{
+  if (request.path == "/")
+  {
+    return HttpHandler::serveStaticFile("index.html");
+  }
+  else if (HttpHandler::isStaticFile(request.path))
+  {
+    return (HttpHandler::serveStaticFile(request.path));
+  }
+  else
+    return (HandlerErrorHttp(404));
+}
+
+/* ========================================================================== */
+
+# include <fstream>
+t_httpResponse HttpHandler::handler_methode_post(t_httpRequest request)
+{
+  std::string                         body;
+  t_httpResponse                      response;
+  std::map<std::string, std::string>  headers;
+
+  std::cout << COLOR_YELLOW << "Warnig : a methode post not implement " << COLOR_RESET << std::endl;
+
+  if (request.path.find("/upload") == 0)
+  {
+    std::string link = ROOT + request.path + "exemple.txt";
+    std::ofstream fichier(link.c_str());
+    
+    HttpHandler::post_parse_header_request(request);
+
+    if (fichier.is_open())
+    {
+
+      fichier << request.body;
+      fichier.close();
+      
+      response.status = 201;
+      response.headers["Content-Type"] = request.headers["Content-Type"];
+      
+      std::cout << COLOR_GREEN << "Success : Created file " << ROOT + request.path + "exple.txt" << COLOR_RESET << std::endl;
+      return (response);
+    }
+  }
+  std::cout << COLOR_YELLOW << "Warnig : Faile Created file " << ROOT + request.path + "exple.txt" << COLOR_RESET << std::endl;
+  return (HandlerErrorHttp(500));
+
+}
+
+/* ========================================================================== */
+
+t_httpResponse HttpHandler::handler_methode_delete(t_httpRequest& request)
+{
+  std::cout << COLOR_YELLOW << "Warnig : a methode delete not implement " << request.path << COLOR_RESET << std::endl;
+  std::string link = ROOT + request.path;
+  if(remove(link.c_str()) == 0) 
+  {
+    std::cout << COLOR_GREEN << "Success: " << link <<" is delete !" << COLOR_RESET << std::endl;
+    return (HandlerErrorHttp(204));
+  }
+  else
+  {
+    std::cout << "Le fichier n'a pas été supprimer a cause qu'il n'existe pas, un droit d'accès refusé,..." << std::endl;
+  }  
+  return (HandlerErrorHttp(404));
+}
 
 /* ************************************************************************** */
 /*                                                                            */
