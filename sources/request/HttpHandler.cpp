@@ -6,7 +6,7 @@
 /*   By: lcluzan <lcluzan@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/07 13:48:28 by bchallat          #+#    #+#             */
-/*   Updated: 2026/06/02 10:11:02 by bchallat         ###   ########.fr       */
+/*   Updated: 2026/06/08 17:08:22 by tjacquel         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,12 +33,14 @@ t_httpRequest  HttpHandler::setHttpRequest(const std::string& raw_request)
 
 /* ========================================================================== */
 
-t_httpResponse HttpHandler::setHttpResponse(t_httpRequest request)
+t_httpResponse HttpHandler::setHttpResponse(t_httpRequest request, const ServerConfig& config)
 {
-	t_httpResponse                      response;
-  std::map<std::string, std::string>  headers;
+	t_httpResponse                        response;
+  std::map<std::string, std::string>    headers;
+  std::map<std::string, LocationConfig>	location = config.getLocationConfig();
 
-	if (request.method != "GET" && request.method != "POST" && request.method != "DELETE")
+	//if (request.method != "GET" && request.method != "POST" && request.method != "DELETE")
+	if (!location["/"].checkMethod(request.method))
 	{
     return (HandlerErrorHttp(400));
   }
@@ -48,7 +50,7 @@ t_httpResponse HttpHandler::setHttpResponse(t_httpRequest request)
   }
   else if (request.method == "GET")
   {
-    return (HttpHandler::handler_methode_get(request));
+    return (HttpHandler::handler_methode_get(request, config));
   }
   else if (request.method == "POST")
   {
@@ -56,7 +58,7 @@ t_httpResponse HttpHandler::setHttpResponse(t_httpRequest request)
   }
   else if (request.method == "DELETE")
   {
-    return (HttpHandler::handler_methode_delete(request));
+    return (HttpHandler::handler_methode_delete(request, config));
   }
   else
   {
@@ -85,7 +87,7 @@ t_httpResponse HttpHandler::HandlerErrorHttp(int status)
     body ="<html><body>403 Forbidden</body></html>";
     
   else if (status == 404)
-    return (HttpHandler::serveStaticFile("404.html"));
+    return (HttpHandler::serveStaticFile("sources/www/404.html"));
 
   else if (status == 405)
     body ="<html><body>405 Method Not Allowed</body></html>";
@@ -109,15 +111,17 @@ t_httpResponse HttpHandler::HandlerErrorHttp(int status)
 /*                          -- HTTP METHODE --                                */
 /* ========================================================================== */
 
-t_httpResponse HttpHandler::handler_methode_get(t_httpRequest& request)
+t_httpResponse HttpHandler::handler_methode_get(t_httpRequest& request, const ServerConfig& config)
 {
+  std::map<std::string, LocationConfig>	location = config.getLocationConfig();
+
   if (request.path == "/")
   {
-    return HttpHandler::serveStaticFile("index.html");
+    return HttpHandler::serveStaticFile(location["/"].getRoot() + location["/"].getIndex());
   }
-  else if (HttpHandler::isStaticFile(request.path))
+  else if (HttpHandler::isStaticFile(location["/"].getRoot() + request.path))
   {
-    return (HttpHandler::serveStaticFile(request.path));
+    return (HttpHandler::serveStaticFile(location["/"].getRoot() + request.path));
   }
   else
     return (HandlerErrorHttp(404));
@@ -130,16 +134,18 @@ t_httpResponse HttpHandler::handler_methode_post(t_httpRequest request)
 {
   std::string                         body;
   t_httpResponse                      response;
+  t_post_methode                      parsing;
   std::map<std::string, std::string>  headers;
 
+
   std::cout << COLOR_YELLOW << "Warnig : a methode post not implement " << COLOR_RESET << std::endl;
+  parsing = HttpHandler::post_parse_header_request(request);
 
   if (request.path.find("/upload") == 0)
   {
-    std::string link = ROOT + request.path + "exemple.txt";
+    std::string link = ROOT + request.path + parsing.nameFile;
     std::ofstream fichier(link.c_str());
     
-    HttpHandler::post_parse_header_request(request);
 
     if (fichier.is_open())
     {
@@ -150,7 +156,7 @@ t_httpResponse HttpHandler::handler_methode_post(t_httpRequest request)
       response.status = 201;
       response.headers["Content-Type"] = request.headers["Content-Type"];
       
-      std::cout << COLOR_GREEN << "Success : Created file " << ROOT + request.path + "exple.txt" << COLOR_RESET << std::endl;
+      std::cout << COLOR_GREEN << "Success : Created file " << ROOT + request.path + parsing.nameFile << COLOR_RESET << std::endl;
       return (response);
     }
   }
@@ -161,13 +167,13 @@ t_httpResponse HttpHandler::handler_methode_post(t_httpRequest request)
 
 /* ========================================================================== */
 
-t_httpResponse HttpHandler::handler_methode_delete(t_httpRequest& request)
+t_httpResponse HttpHandler::handler_methode_delete(t_httpRequest& request, const ServerConfig& config)
 {
-  std::cout << COLOR_YELLOW << "Warnig : a methode delete not implement " << request.path << COLOR_RESET << std::endl;
-  std::string link = ROOT + request.path;
-  if(remove(link.c_str()) == 0) 
+  std::map<std::string, LocationConfig>	location = config.getLocationConfig();
+
+  if(remove((location["/"].getRoot() + request.path).c_str()) == 0) 
   {
-    std::cout << COLOR_GREEN << "Success: " << link <<" is delete !" << COLOR_RESET << std::endl;
+    std::cout << COLOR_GREEN << "Success: " << location["/"].getRoot() + request.path <<" is delete !" << COLOR_RESET << std::endl;
     return (HandlerErrorHttp(204));
   }
   else

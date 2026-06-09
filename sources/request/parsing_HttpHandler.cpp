@@ -77,9 +77,6 @@ static std::vector<std::string> lx_hash_request(const std::string& raw_request)
     // Passe à la position après \r\n
     start = end + 2;
   }
-  
-  std::cout << raw_request << std::endl;
-
   return ( hash );
 }
 

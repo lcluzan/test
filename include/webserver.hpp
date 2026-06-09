@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   webserver.hpp                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: lcluzan <lcluzan@student.42.fr>            +#+  +:+       +#+        */
+/*   By: tjacquel <tjacquel@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/02/25 17:39:42 by bchallat          #+#    #+#             */
-/*   Updated: 2026/06/02 11:09:55 by bchallat         ###   ########.fr       */
+/*   Updated: 2026/06/04 18:34:45 by tjacquel         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,7 +17,7 @@
 #define MAX_CLIENTS 10   // Nombre max de clients simultanés
 #define BUFFER_SIZE 4096  // Taille du buffer pour lire les requêtes
 
-#define DEBUG_FLAG 1
+#define DEBUG_FLAG 0
 
 #include <sys/socket.h>  // Pour les sockets
 #include <netinet/in.h>  // Pour sockaddr_in
@@ -34,7 +34,8 @@
 #include "./network/ClientManager.hpp"
 #include "./network/EventLoop.hpp"
 #include <request/HttpHandler.hpp>
-# include "./ServerConfig.hpp"
+# include "./config/ServerConfig.hpp"
+# include "./config/LocationConfig.hpp"
 //#include "./request/RequestHttp.hpp"
 
 # endif

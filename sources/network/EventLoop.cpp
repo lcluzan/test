@@ -78,8 +78,8 @@ ClientInfo* EventLoop::acceptNewConnection(int server_fd)
     int client_port;
     int client_fd = _socket_handler.acceptConnection(server_fd, client_ip, client_port);
     
-    if (client_fd == -1) 
-    {
+    if (client_fd == -1) {
+
         return( NULL );
     }
 
@@ -91,9 +91,9 @@ ClientInfo* EventLoop::acceptNewConnection(int server_fd)
     _poll_fds.push_back(client_pollfd);
 
     std::cout << COLOR_CYAN << "(Log Client) : new connection accepted (fd=" << client_fd
-              << ", IP=" << client_ip << ", Port=" << client_port << ")" << COLOR_RESET << std::endl;
+              << ", IP=" << client_ip << ", Port client=" << client_port << ")" << COLOR_RESET << std::endl;
 
-    return _client_manager.getClient(client_fd);
+    return ( _client_manager.getClient(client_fd) );
 }
 
 /* ************************************************************************** */

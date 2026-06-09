@@ -16,26 +16,49 @@
 
 # include "../include/webserver.hpp"
 
+
+/* ========================================================================== */
+/*                    -- definition and prototype --                          */
+/* ========================================================================== */
+#if RUN_WITH_SERVER
+
 volatile sig_atomic_t g_should_exit = 0;
 
-static void inf_loop(std::vector<int> ports);
-static void initVerctorOfPort(std::vector<int>& ports);
-static void signal_handler(int signal);
-#if DEBUG_FLAG
-static void print_http_request(const t_httpRequest& request);
-static void print_http_response(const t_httpResponse& response);
+static void           signal_handler(int signal);
+static void           print_http_request(const t_httpRequest& request); 
+static void           print_http_response(const t_httpResponse& response); 
+std::string           readFullHttpRequest(int fd, EventLoop& loop) ;
+static void           inf_loop(std::vector<int> ports, const std::vector<ServerConfig>& config);
+static int            getPortServer(int fd);
+static void           initVerctorOfPort(std::vector<int>& ports, const std::vector<ServerConfig>& virtual_servers);
+static ServerConfig  getConfigForHandler(const std::vector<ServerConfig>& vec_config, int port);
+
 #endif
-std::string readFullHttpRequest(int fd, EventLoop& loop) ;
+/* ========================================================================== */
+/*                           -- main focntion --                              */
+/* ========================================================================== */
 
-int main()
+int main (int av, char *ag[]) 
 {
+	if (av != 2) {
 
-	std::signal(SIGINT, signal_handler);// Enregistrer le gestionnaire de signal
-  std::vector<int> ports;
-  initVerctorOfPort(ports);
+		std::cout << "Usage: ./webserv [configuration file]" << std::endl;
+		return (EXIT_FAILURE);
+	}
+
+#if RUN_WITH_SERVER
+		std::signal(SIGINT, signal_handler);// Enregistrer le gestionnaire de signal
+#endif
 
 try {
-      inf_loop(ports);
+	std::vector<ServerConfig>	virtual_servers;
+	confParsingHandler(ag[1], virtual_servers);
+
+#if RUN_WITH_SERVER
+	std::vector<int> ports;
+	initVerctorOfPort(ports, virtual_servers);
+	inf_loop(ports, virtual_servers);
+#endif
 
     } catch (const std::exception& e) {
 
@@ -45,64 +68,85 @@ try {
     return EXIT_SUCCESS;
 }
 
-static void handler_conection(EventLoop &loop)
+
+/* ========================================================================== */
+/*                           -- Loop of event --                              */
+/* ========================================================================== */
+#if RUN_WITH_SERVER
+
+
+static ServerConfig  getConfigForHandler(const std::vector<ServerConfig>& vec_config, int port)
+{
+  ServerConfig  config;
+
+  for (std::vector<ServerConfig>::const_iterator it = vec_config.begin(); it != vec_config.end(); it++) {
+    
+    if (it->getPort() == port) {
+
+      config = *it;
+      return ( config );
+    }
+  }
+
+  return ( config );
+}
+
+static void handler_conection(EventLoop &loop, const std::vector<ServerConfig>& vec_config)
 {
   std::vector<int> activeFds = loop.getActiveFds();
 
   for (size_t i = 0; i < activeFds.size(); i++)
   {
     int fd = activeFds[i];
-    if (loop.isServerFd(fd))
-    {
+    if (loop.isServerFd(fd)) {
+
       loop.acceptNewConnection(fd);
-    }
-    else
-    {
+    } else {
+
       std::string string_request;
-
       string_request = readFullHttpRequest(fd, loop);
+      
+      ServerConfig config = getConfigForHandler(vec_config, getPortServer(fd));
 
+      std::cout << "Server port for fd=" << fd << ": " << getPortServer(fd) << std::endl;
 
-      // 👇 Traitement Request HTTP
-
-      t_httpRequest request = HttpHandler::setHttpRequest(string_request.c_str());
-      t_httpResponse response = HttpHandler::setHttpResponse(request);
+      t_httpRequest request = HttpHandler::setHttpRequest(string_request);
+      t_httpResponse response = HttpHandler::setHttpResponse(request, config);
 
       std::string raw_response = response.toString();
       loop.sendResponse(fd, raw_response);
+
       if (response.status == 400)
       {
         loop.removeClient(fd);
-
       }
-#if DEBUG_FLAG
+
       print_http_request(request);
       print_http_response(response);
-#endif
 
     }
   }
 }
 
-static void inf_loop(std::vector<int> ports)
+static void inf_loop(std::vector<int> ports, const std::vector<ServerConfig>& vec_config)
 {
+  int       ret = -1;
   EventLoop loop(ports);
-  loop.setupServerSockets();
 
-  while (!g_should_exit)
-  {
-    int ret = loop.waitForActivity();
+  loop.setupServerSockets();
+  while (!g_should_exit) {
+
+    ret = loop.waitForActivity();
     if (ret == -1)
-    {
       std::cerr << COLOR_RED << "Error: poll() failed (interrupted system call?)" << COLOR_RESET << std::endl;
-      break;
-    }
     else
-    {
-      handler_conection(loop);
-    }
+      handler_conection(loop,vec_config);
   }
 }
+
+/* ========================================================================== */
+/*                                                                            */
+/* ========================================================================== */
 
 static void signal_handler(int signal)
 {
@@ -113,16 +157,29 @@ static void signal_handler(int signal)
   }
 }
 
-static void initVerctorOfPort(std::vector<int>& ports)
+	// std::cout << "virtual_servers.size()=" << virtual_servers.size() << std::endl;
+		// std::cout << "virtual_servers[i].getPort()=" << virtual_servers[i].getPort() << std::endl;
+static void initVerctorOfPort(std::vector<int>& ports, const std::vector<ServerConfig>& virtual_servers)
 {
-  ports.push_back(8080);
-  ports.push_back(8081);
-  ports.push_back(8082);
+	for (size_t i = 0; i < virtual_servers.size(); ++i)
+    ports.push_back(virtual_servers[i].getPort());
 }
 
-/* ==================================================================================================*/
+static int  getPortServer(int fd)
+{
+  struct sockaddr_in server_addr;
+  socklen_t server_addr_len = sizeof(server_addr);
+  
+  if (getsockname(fd, (struct sockaddr *)&server_addr, &server_addr_len) == -1)
+        std::cerr << COLOR_RED << "getsockname() failed: " << strerror(errno) << COLOR_RESET << std::endl;
 
-#if DEBUG_FLAG
+  return ( ntohs(server_addr.sin_port) );
+}
+
+/* ========================================================================== */
+/*                 -- print fonction for request/response --                  */
+/* ========================================================================== */
+
 static void print_http_request(const t_httpRequest& request) {
     // Affichage de la méthode, du chemin et de la version
     std::cout << COLOR_CYAN << "\n=== HTTP Request ===" << COLOR_RESET << std::endl;
@@ -140,6 +197,7 @@ static void print_http_request(const t_httpRequest& request) {
             std::cout << it->first << ": " << COLOR_GREEN << it->second << COLOR_RESET << std::endl;
         }
     }
+#if DEBUG_FLAG
     // Affichage du body (si présent)
     std::cout << COLOR_CYAN << "\n--- Body ---" << COLOR_RESET << std::endl;
     if (request.body.empty()) {
@@ -147,11 +205,10 @@ static void print_http_request(const t_httpRequest& request) {
     } else {
         std::cout << COLOR_BLUE << request.body << COLOR_RESET << std::endl;
     }
+#endif 
     std::cout << COLOR_CYAN << "===================\n" << COLOR_RESET << std::endl;
 }
-#endif
 
-#if DEBUG_FLAG
 static void print_http_response(const t_httpResponse& response) {
     // Affichage du statut
     std::cout << COLOR_CYAN << "\n=== HTTP Response ===" << COLOR_RESET << std::endl;
@@ -176,6 +233,7 @@ static void print_http_response(const t_httpResponse& response) {
             std::cout << it->first << ": " << COLOR_GREEN << it->second << COLOR_RESET << std::endl;
         }
     }
+#if DEBUG_FLAG
     // Affichage du body (si présent)
     std::cout << COLOR_CYAN << "\n--- Body ---" << COLOR_RESET << std::endl;
     if (response.body.empty()) {
@@ -187,9 +245,13 @@ static void print_http_response(const t_httpResponse& response) {
     /*std::cout << COLOR_CYAN << "\n--- Full Response ---" << COLOR_RESET << std::endl;
     std::cout << COLOR_MAGENTA << response.toString() << COLOR_RESET << std::endl;*/
 
+#endif 
     std::cout << COLOR_CYAN << "====================\n" << COLOR_RESET << std::endl;
 }
-#endif
+
+/* ========================================================================== */
+/*                   -- fonc for read full request --                         */
+/* ========================================================================== */
 
 // Helper pour extraire le Content-Length proprement
 static size_t extractContentLength(const std::string& request) {
@@ -242,3 +304,5 @@ std::string readFullHttpRequest(int fd, EventLoop& loop) {
     }
     return request;
 }
+#endif
+

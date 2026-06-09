@@ -6,7 +6,7 @@
 #    By: tjacquel <tjacquel@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2026/02/20 09:10:14 by bchallat          #+#    #+#              #
-#    Updated: 2026/06/01 12:43:37 by ton_utilisate    ###   ########.fr        #
+#    Updated: 2026/06/04 18:41:44 by tjacquel         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -47,7 +47,10 @@ NAME = webserv
 SRC = webserver.cpp ${SRC_CONFIG} ${SRC_NETWORCK} ${SRC_REQUEST} ${SRC_CGI}
 
 SRC_CONFIG		=	config/ServerConfig.cpp \
-								config/ConfigParsing.cpp \
+					config/ConfigParsing.cpp \
+					config/ConfigParsingUtils.cpp \
+					config/LocationConfig.cpp \
+
 
 SRC_NETWORCK	=	network/SocketHandler.cpp\
 								network/ClientInfo.cpp \
@@ -111,7 +114,7 @@ $(OBJDIR)/%.o: $(TEST_DIR)/unit_test/%.cpp | $(OBJDIR)
 	@${ECHO_FLAG} "$(GREEN)[OK]       	🛠️ $(YELLOW)Compiling ... $(BLUE)$<$(RESET)"
 	@$(CCFLAG) -Iinclude -I$(TEST_DIR)/include -c $< -o $@
 
-	
+
 #===============================================================#
 #                                                               #
 #===============================================================#

@@ -95,18 +95,97 @@ std::string getMimeType(const std::string& path)
     return ("text/plain");
 }
 
+/*
+#include <sys/stat.h>   // Pour stat()
+#include <unistd.h>     // Pour access()
+#include <cerrno>       // Pour errno
+#include <cstring>      // Pour strerror
+
+t_httpResponse HttpHandler::serveStaticFile(const std::string& path) {
+    // 🔹 1. Afficher le chemin reçu
+    std::cout << COLOR_YELLOW << "[DEBUG] Attempting to open file: '" << path << "'" << COLOR_RESET << std::endl;
+
+    // 🔹 2. Vérifier si le chemin est absolu ou relatif
+    if (path[0] == '/') {
+        std::cout << "[DEBUG] Path is absolute." << std::endl;
+    } else {
+        std::cout << "[DEBUG] Path is relative." << std::endl;
+    }
+
+    // 🔹 3. Vérifier si le fichier existe avec access()
+    if (access(path.c_str(), F_OK) == -1) {
+        std::cout << COLOR_RED << "[DEBUG] File does NOT exist: " << strerror(errno) << COLOR_RESET << std::endl;
+        return HandlerErrorHttp(404);
+    } else {
+        std::cout << "[DEBUG] File exists." << std::endl;
+    }
+
+    // 🔹 4. Vérifier les permissions en lecture
+    if (access(path.c_str(), R_OK) == -1) {
+        std::cout << COLOR_RED << "[DEBUG] No read permission: " << strerror(errno) << COLOR_RESET << std::endl;
+        return HandlerErrorHttp(403);
+    } else {
+        std::cout << "[DEBUG] Read permission OK." << std::endl;
+    }
+
+    // 🔹 5. Vérifier si c'est un fichier régulier (pas un dossier)
+    struct stat path_stat;
+    if (stat(path.c_str(), &path_stat) == -1) {
+        std::cout << COLOR_RED << "[DEBUG] stat() failed: " << strerror(errno) << COLOR_RESET << std::endl;
+        return HandlerErrorHttp(404);
+    }
+    if (!S_ISREG(path_stat.st_mode)) {
+        std::cout << COLOR_RED << "[DEBUG] Path is NOT a regular file (maybe a directory)." << COLOR_RESET << std::endl;
+        return HandlerErrorHttp(403);
+    } else {
+        std::cout << "[DEBUG] Path is a regular file." << std::endl;
+    }
+
+    // 🔹 6. Afficher le répertoire de travail actuel
+    char cwd[1024];
+    if (getcwd(cwd, sizeof(cwd)) != NULL) {
+        std::cout << "[DEBUG] Current working directory: " << cwd << std::endl;
+    } else {
+        std::cout << COLOR_RED << "[DEBUG] getcwd() failed: " << strerror(errno) << COLOR_RESET << std::endl;
+    }
+
+    // 🔹 7. Essayer d'ouvrir le fichier
+    std::ifstream file(path.c_str(), std::ios::binary);
+    if (!file.is_open()) {
+        std::cout << COLOR_RED << "[DEBUG] Failed to open file with ifstream: " << strerror(errno) << COLOR_RESET << std::endl;
+        return HandlerErrorHttp(404);
+    } else {
+        std::cout << "[DEBUG] File opened successfully." << std::endl;
+    }
+
+    // 🔹 8. Lire le contenu
+    std::stringstream buffer;
+    buffer << file.rdbuf();
+    std::string content = buffer.str();
+
+    std::cout << "[DEBUG] File size: " << content.size() << " bytes." << std::endl;
+
+    // 🔹 9. Préparer la réponse
+    t_httpResponse response;
+    response.status = 200;
+    response.headers["Content-Type"] = getMimeType(path);
+    response.body = content;
+
+    return response;
+}
+*/
+
 t_httpResponse HttpHandler::serveStaticFile(const std::string& path) 
 {
     if (!isSafePath(path))
     {
       return (HandlerErrorHttp(403));
     }
-
-    std::string full_path = ROOT + path; // Assurez-vous que le chemin est correct
-    std::ifstream file(full_path.c_str(), std::ios::binary);
-
+    
+    std::ifstream file(path.c_str(), std::ios::binary);
     if (!file.is_open())
     {
+      std::cout << COLOR_MAGENTA << path << ":" << COLOR_RESET << std::endl;
       return (HandlerErrorHttp(404));
     }
 
@@ -116,7 +195,7 @@ t_httpResponse HttpHandler::serveStaticFile(const std::string& path)
 
     t_httpResponse response;
     response.status = 200;
-    response.headers["Content-Type"] = getMimeType(full_path);
+    response.headers["Content-Type"] = getMimeType(path);
     response.body = content;
     
     return (response);
@@ -171,19 +250,64 @@ t_post_methode HttpHandler::post_parse_header_request(t_httpRequest request)
   if (!request.headers["Content-Length"].empty()) {
 
     parsing.bodyLength = request.headers["Content-Length"];
-    std::cout << " .bodyLength : " << parsing.bodyLength  << std::endl; 
+    std::cout << COLOR_MAGENTA << "bodyLength : " << parsing.bodyLength  << COLOR_RESET << std::endl; 
   }
 
   pos_boundary = request.headers["Content-Type"].find("boundary=");
   if (pos_boundary != 0) {
     
     parsing.boundary = request.headers["Content-Type"].substr(pos_boundary + 9);
-    std::cout << " .boundary : " << parsing.boundary << std::endl; 
+    std::cout << COLOR_MAGENTA << "boundary : " << parsing.boundary << COLOR_RESET <<std::endl; 
   }
+
+  for (size_t start = 0, end = 0; start + end < request.body.size(); start += end) {
+
+    size_t  key_pos = request.body.find("Content-", start);
+    size_t  ope_pos = request.body.find(":", key_pos);
+    end = request.body.find("\n", key_pos);
+
+    std::string key = request.body.substr(key_pos, ope_pos - key_pos);
+    std::string value = request.body.substr(ope_pos, end - ope_pos);
+
+    parsing.headers[key] = value;
+    std::cout << COLOR_MAGENTA << key << parsing.headers[key] << COLOR_RESET << std::endl;
+    
+  }
+
+    std::string str = parsing.headers["Content-Disposition"];
+
+    size_t filename_pos = str.find("filename=\"");
+    if (filename_pos != std::string::npos) {
+
+        size_t start_quote = filename_pos + 10; // 9 = longueur de "filename=\""
+        size_t end_quote = str.find("\"", start_quote);
+
+        if (end_quote != std::string::npos) {
+
+            parsing.nameFile = str.substr(start_quote, end_quote - start_quote);
+            std::cout << COLOR_MAGENTA << "Nom du fichier : " << parsing.nameFile << parsing.nameFile.length() << COLOR_RESET << std::endl;
+
+        } else {
+          
+          std::cerr << "Erreur : Guillemet fermant manquant." << std::endl;
+        }
+    } else {
+        
+      std::cerr << "Erreur : 'filename=\"' non trouvé dans Content-Type." << std::endl;
+    }
+
+  // clear body 
   parsing.body = request.body;
   parsing.body.erase(parsing.body.find(parsing.boundary), parsing.boundary.length());
   parsing.body.erase(parsing.body.find(parsing.boundary), parsing.boundary.length());
-  std::cout << ".body : " << parsing.body << std::endl;
+  for (std::map<std::string, std::string>::iterator it = parsing.headers.begin(); it != parsing.headers.end(); ++it) {
+
+    parsing.body.erase(parsing.body.find(it->first), it->first.length());
+    parsing.body.erase(parsing.body.find(it->second), it->second.length());
+
+  }
+  std::cout << COLOR_MAGENTA << "body : " << parsing.body << COLOR_RESET <<std::endl;
+
   return (parsing);
 }
 
