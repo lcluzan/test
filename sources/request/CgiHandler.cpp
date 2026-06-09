@@ -1,5 +1,6 @@
 //#include "../../include/cgi/CgiHandler.hpp"
 #include <request/HttpHandler.hpp>
+#include <webserver.hpp>
 #include <unistd.h>
 #include <sys/wait.h>
 #include <cstring>
@@ -96,6 +97,11 @@ t_httpResponse HttpHandler::executeCgi(const std::string& path, const t_httpRequ
         }
 
         std::string full_path = "./sources/www" + actual_path;
+        // Run int the correct directory
+        std::string dir_path = full_path.substr(0, full_path.find_last_of('/'));
+        if (!dir_path.empty()) {
+            chdir(dir_path.c_str());
+        }
         std::vector<std::string> env_strings = buildCgiEnv(request, full_path, query_string);
 
         // Alloue envp
@@ -133,41 +139,19 @@ t_httpResponse HttpHandler::executeCgi(const std::string& path, const t_httpRequ
         close(pipe_in[0]); // Ferme l'extrémité de lecture de l'enfant
         close(pipe_out[1]); // Ferme l'extrémité d'écriture de l'enfant
 
-        // Envoie le corps de la requête POST au CGI
-        if (!request.body.empty()) {
-            if (write(pipe_in[1], request.body.c_str(), request.body.size()) == -1) {
-                close(pipe_in[1]);
-                close(pipe_out[0]);
-                waitpid(pid, NULL, 0);
-                response.status = 500;
-                response.body = "<html><body>500 Internal Server Error: write failed</body></html>";
-                return response;
-            }
-        }
-        close(pipe_in[1]); // Plus besoin d'écrire
+        // Male pipes non-blocking
+        fcntl(pipe_in[1], F_SETFL, O_NONBLOCK);
+        fcntl(pipe_in[0], F_SETFL, O_NONBLOCK);
 
-        // Lis la sortie du CGI
-        char buffer[4096];
-        std::string cgi_output;
-        ssize_t bytes_read;
-        while ((bytes_read = read(pipe_out[0], buffer, sizeof(buffer) - 1)) > 0) {
-            buffer[bytes_read] = '\0';
-            cgi_output += buffer;
-        }
-        close(pipe_out[0]);
+        response.status = 0; // Pending CGI
+        response.is_cgi = true;
+        response.cgi_read_fd = pipe_out[0];
+        response.cgi_write_fd = pipe_in[1];
+        response.cgi_pid = pid;
 
-        waitpid(pid, NULL, 0); // Attend la fin du CGI
+        // Write the body later in the EventLoop
+        response.body = request.body;
 
-        // Traite la réponse
-        size_t header_end = cgi_output.find("\r\n\r\n");
-        if (header_end != std::string::npos) {
-            response.status = 200;
-            response.body = cgi_output.substr(header_end + 4);
-        } else {
-            // Si pas de headers, on considère que tout est le corps
-            response.status = 200;
-            response.body = cgi_output;
-        }
         return response;
     }
 }

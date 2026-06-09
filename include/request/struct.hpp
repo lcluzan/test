@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   struct.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: bchallat <bchallat@student.42.fr>          +#+  +:+       +#+        */
+/*   By: lcluzan <lcluzan@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/27 13:55:25 by bchallat          #+#    #+#             */
-/*   Updated: 2026/04/27 13:56:15 by bchallat         ###   ########.fr       */
+/*   Updated: 2026/06/09 18:11:32 by lcluzan          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -61,6 +61,11 @@ struct t_httpResponse {
   std::map<std::string, std::string> headers;
 	std::string                        body;
 
+  bool                               is_cgi;
+  int                                cgi_read_fd;
+  int                                cgi_write_fd;
+  pid_t                              cgi_pid;
+
   t_httpResponse();
   t_httpResponse(int status, const std::map<std::string, std::string>& headers, const std::string& body);
   std::string toString() const;
@@ -72,7 +77,7 @@ struct t_httpResponse {
 /* ========================================================================== */
 
 struct t_post_methode {
-  
+
   std::string                         bodyLength;
   std::string                         nameFile;
   std::string                         boundary;
