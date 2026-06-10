@@ -97,7 +97,7 @@ t_httpResponse HttpHandler::executeCgi(const std::string& path, const t_httpRequ
         }
 
         std::string full_path = "./sources/www" + actual_path;
-        // Run int the correct directory
+        // Run in the correct directory
         std::string dir_path = full_path.substr(0, full_path.find_last_of('/'));
         if (!dir_path.empty()) {
             chdir(dir_path.c_str());

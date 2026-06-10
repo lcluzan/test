@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   SocketHandler.cpp                                  :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: tjacquel <tjacquel@student.42.fr>          +#+  +:+       +#+        */
+/*   By: lcluzan <lcluzan@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/03/23 13:33:39 by bchallat          #+#    #+#             */
-/*   Updated: 2026/06/01 09:32:40 by ton_utilisate    ###   ########.fr       */
+/*   Updated: 2026/06/09 18:49:37 by lcluzan          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,10 +20,10 @@ SocketHandler::~SocketHandler() {}
 std::vector<int> SocketHandler::createSocketWithPort(const std::vector<int>& ports)
 {
   int               fd  = -1;
-  size_t            iterator = 0;  
+  size_t            iterator = 0;
   std::vector<int>  server_fds;
 
-  while(iterator < ports.size()) 
+  while(iterator < ports.size())
   {
     fd = createServerSocket(ports[iterator]);
     server_fds.push_back(fd);
@@ -52,22 +52,22 @@ void SocketHandler::closeSocket(int fd)
 static struct sockaddr_in  set_socket_addr(int port)
 {
   struct sockaddr_in socket_addr;
-  
+
   memset(&socket_addr, 0, sizeof(socket_addr));
   socket_addr.sin_family = AF_INET;
   socket_addr.sin_addr.s_addr = INADDR_ANY;
   socket_addr.sin_port = htons(port);
-  
+
   return ( socket_addr );
 }
 
-int SocketHandler::createServerSocket(int port) 
+int SocketHandler::createServerSocket(int port)
 {
   int opt = 1;
   int socket_fd = socket(AF_INET, SOCK_STREAM, 0);
   int current_flags = fcntl(socket_fd, F_GETFL, 0);
   struct sockaddr_in socket_addr = set_socket_addr(port);
-    
+
   if (socket_fd == -1)
   {
     throw std::runtime_error("socket() " + std::string(strerror(errno)));
@@ -91,7 +91,7 @@ int SocketHandler::createServerSocket(int port)
     throw std::runtime_error("bind() " + std::string(strerror(errno)));
   }
 
-  if (listen(socket_fd, SOMAXCONN) == -1) 
+  if (listen(socket_fd, SOMAXCONN) == -1)
   {
     closeSocket(socket_fd);
     throw std::runtime_error("listen() " + std::string(strerror(errno)));
@@ -119,6 +119,11 @@ int SocketHandler::acceptConnection(int socket_fd, std::string& client_ip, int& 
     }
     else
     {
+      // Make client NON-BLOCKING
+      int flags = fcntl(client_fd, F_GETFL, 0);
+      if (flags != -1){
+        fcntl(client_fd, F_SETFL, flags | O_NONBLOCK);
+      }
       inet_ntop(AF_INET, &(client_addr.sin_addr), ip_str, INET_ADDRSTRLEN);
       client_ip = std::string(ip_str);
       client_port = ntohs(client_addr.sin_port);
