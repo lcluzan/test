@@ -1,38 +1,30 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   ClientInfo.hpp                                     :+:      :+:    :+:   */
+/*   colorLog.hpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: lcluzan <lcluzan@student.42.fr>            +#+  +:+       +#+        */
+/*   By: tjacquel <tjacquel@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/03/25 06:30:01 by bchallat          #+#    #+#             */
-/*   Updated: 2026/06/10 13:52:05 by lcluzan          ###   ########.fr       */
+/*   Created: 2026/03/31 11:25:49 by bchallat          #+#    #+#             */
+/*   Updated: 2026/04/25 16:12:59 by tjacquel         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef CLIENT_INFO_HPP
-#define CLIENT_INFO_HPP
+#ifndef COLORLOG_HPP
+# define COLORLOG_HPP
 
-#include <string>
+# include <iostream>
 
-class ClientInfo {
+# define COLOR_RESET   "\033[0m"
+# define COLOR_RED     "\033[1;31m"
+# define COLOR_GREEN   "\033[1;32m"
+# define COLOR_YELLOW  "\033[1;33m"
+# define COLOR_BLUE    "\033[1;34m"
+# define COLOR_MAGENTA "\033[1;35m"
+# define COLOR_CYAN    "\033[1;36m"
+# define COLOR_WHITE   "\033[1;37m"
 
-  public:
-    ClientInfo(int fd, const std::string& ip, int port);
-    virtual ~ClientInfo(void);
-
-  public:
-    int                 getFileDescriptor(void) const;
-    int                 getPortNumber(void) const;
-    const std::string&  getAdressIp(void) const;
-
-  private:
-    int         _fileDescriptor;
-    int         _portNumber;
-    std::string _adressIp;
-};
-
-#endif
+#endif // COLORLOG_HPP
 
 /* ************************************************************************** */
 /*                                                                            */
