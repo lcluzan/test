@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   SocketHandler.cpp                                  :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: lcluzan <lcluzan@student.42.fr>            +#+  +:+       +#+        */
+/*   By: tjacquel <tjacquel@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/03/23 13:33:39 by bchallat          #+#    #+#             */
-/*   Updated: 2026/06/09 18:49:37 by lcluzan          ###   ########.fr       */
+/*   Updated: 2026/06/10 20:04:13 by tjacquel         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -119,7 +119,7 @@ int SocketHandler::acceptConnection(int socket_fd, std::string& client_ip, int& 
     }
     else
     {
-      // Make client NON-BLOCKING
+    //   // Make client NON-BLOCKING
       int flags = fcntl(client_fd, F_GETFL, 0);
       if (flags != -1){
         fcntl(client_fd, F_SETFL, flags | O_NONBLOCK);

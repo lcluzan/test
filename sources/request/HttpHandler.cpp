@@ -6,11 +6,12 @@
 /*   By: lcluzan <lcluzan@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/07 13:48:28 by bchallat          #+#    #+#             */
-/*   Updated: 2026/06/10 15:01:50 by bchallat         ###   ########.fr       */
+/*   Updated: 2026/06/12 15:39:00 by bchallat         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include <request/HttpHandler.hpp>
+#include <request/macroHtml.hpp>
 
 /* ========================================================================== */
 /*                          -- PARSING REQUESTE --                            */
@@ -45,10 +46,10 @@ t_httpResponse HttpHandler::setHttpResponse(t_httpRequest request, const ServerC
 	t_httpResponse                        response;
   std::map<std::string, std::string>    headers;
   std::map<std::string, LocationConfig>	location = config.getLocationConfig();
-
+  
 	if (!location["/"].checkMethod(request.method))
 	{
-    return (HandlerErrorHttp(400));
+    return (HandlerErrorHttp(405, config));
   }
   else if (request.path.find("/cgi-bin/") == 0 || request.path.find(".php") != std::string::npos || request.path.find(".py") != std::string::npos)
   {
@@ -68,7 +69,7 @@ t_httpResponse HttpHandler::setHttpResponse(t_httpRequest request, const ServerC
   }
   else
   {
-    return (HandlerErrorHttp(404));
+    return (HandlerErrorHttp(400, config));
   }
 	return ( response );
 }
@@ -78,28 +79,51 @@ t_httpResponse HttpHandler::setHttpResponse(t_httpRequest request, const ServerC
 /* ========================================================================== */
 
 
-t_httpResponse HttpHandler::HandlerErrorHttp(int status)
+t_httpResponse HttpHandler::HandlerErrorHttp(int status, const ServerConfig& config)
 {
 	t_httpResponse                      response;
   std::map<std::string, std::string>  headers;
   std::string body;
-  
+  std::map<std::string, LocationConfig>	location = config.getLocationConfig();
+  std::map<int, std::string> page = location["/"].getErrorPage();
+
+  headers["Date"] = getCurrentHttpDate();
   headers["Connection"] = "close";
   headers["Content-Type"] = "text/html";
   
+  std::string open = location["/"].getRoot() + "/" + page[status];
+  std::ifstream file(open.c_str(), std::ios::binary);
   std::ostringstream oss;
 
-  if (status == 400)
-    body ="<html><body>400 Bad Request</body></html>";
+  if (file.is_open() && !page[status].empty())
+  {
+    std::stringstream buffer;
+    buffer << file.rdbuf();
+    body = buffer.str();
+
+  }
+
+  else if (status == 301)
+  {
+    body = def_301; 
+  }
+  else if (status == 302)
+    body = def_302; 
+
+  else if (status == 304)
+    body = def_304; 
+
+  else if (status == 400)
+    body = def_400; 
 
   else if (status == 403)
-    body ="<html><body>403 Forbidden</body></html>";
+    body = def_403; 
     
   else if (status == 404)
-    return (HttpHandler::serveStaticFile("sources/www/404.html"));
+    body = def_404; 
 
   else if (status == 405)
-    body ="<html><body>405 Method Not Allowed</body></html>";
+    body = def_405;
   
   else if (status == 500)
     body ="<html><body>500 Internal Server Error</body></html>";
@@ -115,11 +139,11 @@ t_httpResponse HttpHandler::HandlerErrorHttp(int status)
 
   return (t_httpResponse(status, headers, body));
 }
-
+ 
 /* ========================================================================== */
 /*                          -- HTTP METHODE --                                */
 /* ========================================================================== */
-
+/*
 t_httpResponse HttpHandler::handler_methode_get(t_httpRequest& request, const ServerConfig& config)
 {
   std::map<std::string, LocationConfig>	location = config.getLocationConfig();
@@ -137,9 +161,9 @@ t_httpResponse HttpHandler::handler_methode_get(t_httpRequest& request, const Se
   else
     return (HandlerErrorHttp(404));
 }
-
+*/
 /* ========================================================================== */
-
+/*
 t_httpResponse HttpHandler::handler_methode_post(t_httpRequest request, const ServerConfig& config)
 {
   std::string                           link;
@@ -163,7 +187,6 @@ t_httpResponse HttpHandler::handler_methode_post(t_httpRequest request, const Se
     {
       fichier << parsing.body;
       fichier.close();
-      /*    TO DO  -- delete the gestion of responst struct */ 
       response.status = 201;
       response.headers = parsing.headers;
       
@@ -185,9 +208,9 @@ t_httpResponse HttpHandler::handler_methode_post(t_httpRequest request, const Se
   std::cout << COLOR_MAGENTA << "\n   ~~~~~~ METHODE END  ~~~~~~" << COLOR_RESET << std::endl;
   return (HandlerErrorHttp(response.status));
 }
-
+*/
 /* ========================================================================== */
-
+/*
 t_httpResponse HttpHandler::handler_methode_delete(t_httpRequest& request, const ServerConfig& config)
 {
   int     status = 500;
@@ -205,9 +228,8 @@ t_httpResponse HttpHandler::handler_methode_delete(t_httpRequest& request, const
   std::cout << COLOR_MAGENTA << "\n   ~~~~~~  METHODE END  ~~~~~~" << COLOR_RESET << std::endl;
   return (HandlerErrorHttp(status));
 }
-
+*/
 /* ************************************************************************** */
 /*                                                                            */
 /* ************************************************************************** */
-
 

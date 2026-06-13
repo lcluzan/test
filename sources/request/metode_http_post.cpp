@@ -1,176 +1,87 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   response_HttpHandler.cpp                           :+:      :+:    :+:   */
+/*   metode_http_post.cpp                               :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ton_utilisateur_42 <ton_email@student.42.  +#+  +:+       +#+        */
+/*   By: bchallat <bchallat@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/06/01 12:20:23 by ton_utilisate     #+#    #+#             */
-/*   Updated: 2026/06/12 11:21:53 by bchallat         ###   ########.fr       */
+/*   Created: 2026/06/11 16:32:30 by bchallat          #+#    #+#             */
+/*   Updated: 2026/06/12 15:12:22 by bchallat         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
-
-#include <fstream>   // Pour std::ifstream
-#include <sstream>   // Pour std::stringstream
 
 #include <request/HttpHandler.hpp>
 
 /* ========================================================================== */
-/*         -- CONSTRUCTOR/DESTRUCTOR && METHODE OF STRUCT RESPONSE --         */
+/*                          -- HTTP METHODE --                                */
 /* ========================================================================== */
 
-// Constructeur par défaut
-t_httpResponse::t_httpResponse()
-    : status(200), body("") {
-    headers.insert(std::make_pair("Content-Type", "text/html"));
-}
-// Constructeur paramétré
-t_httpResponse::t_httpResponse(int status, const std::map<std::string, std::string>& headers, const std::string& body)
-    : status(status), headers(headers), body(body) {}
-
-/* ========================================================================== */
-
-// Méthode pour convertir la réponse en chaîne HTTP brute
-std::string t_httpResponse::toString() const {
-    // std::string response;
-	std::stringstream	ss;
-
-    // Ligne de statut (ex: "HTTP/1.1 200 OK")
-	// std::stringstream	ss;
-	// ss << "HTTP/1.1 " << status << " ";
-	// response += ss.str();
-	ss << "HTTP/1.1 " << status << " ";
-    // response += "HTTP/1.1 " + to_string(status) + " ";
-    switch (status) {
-        // case 200: response += "OK"; break;
-        // case 400: response += "Bad Request"; break;
-        // case 404: response += "Not Found"; break;
-        // case 501: response += "Not Implemented"; break;
-        // default: response += "Unknown Status"; break;
-		case 200: ss <<  "OK"; break;
-        case 400: ss <<  "Bad Request"; break;
-        case 404: ss <<  "Not Found"; break;
-        case 501: ss <<  "Not Implemented"; break;
-        default:  ss << "Unknown Status"; break;
-    }
-	ss << "\r\n";
-    // response += "\r\n";
-
-    // En-têtes
-    for (std::map<std::string, std::string>::const_iterator it = headers.begin(); it != headers.end(); ++it) {
-    // response += it->first + ": " + it->second + "\r\n";
-	ss << it->first << ": " << it->second << "\r\n";
-}
-
-    // Body (si présent)
-    if (!body.empty()) {
-		// ss << "Content-Length: " << body.size() << "\r\n";
-        // response += "Content-Length: " + std::to_string(body.size()) + "\r\n";
-		// response += ss.str();
-		ss << "Content-Length: " << body.size() << "\r\n";
-    }
-    // response += "\r\n";
-    // response += body;
-	ss << "\r\n" << body;
-
-    // return response;
-	return ss.str();
-}
-/* ========================================================================== */
-/*                            -- CURR HTTP DATE --                            */
-/* ========================================================================== */
-
-std::string HttpHandler::getCurrentHttpDate() 
+t_httpResponse HttpHandler::handler_methode_post(t_httpRequest request, const ServerConfig& config)
 {
-     std::time_t now = std::time(NULL);
-    std::tm *gmTime = std::gmtime(&now);
+  std::string                           link;
+  std::string                           body;
+  t_post_methode                        parsing;
+  t_httpResponse                        response;
+  std::map<std::string, LocationConfig>	location;
+  
+  location = config.getLocationConfig();
 
-    char buffer[100]; // Buffer pour stocker la date formatée
-    strftime(buffer, sizeof(buffer), "%a, %d %b %Y %H:%M:%S GMT", gmTime);
-    return std::string(buffer);
-}
+  if (request.body.empty() || location["/"].getRoot().empty()) {
 
+    response.status = 404;
+  }else if (access((location["/"].getRoot() + request.path).c_str(), W_OK) != 0) {
+        response.status = 403;
+    std::cout << COLOR_RED << "errordroit d'accès refusé,..." << COLOR_RESET << std::endl;
 
-/* ========================================================================== */
-/*                 -- SERV STATIC FILE IMPLEMENT FONCTION  --                 */
-/* ========================================================================== */
-/*
-bool isSafePath(const std::string& path) 
-{
-  return (path.find("../") == std::string::npos); // Empêche les chemins relatifs (comme "../")
-}
+  } else if (request.path.find("/upload/") != std::string::npos) {
 
-std::string getMimeType(const std::string& path) 
-{
-    // Implémentez la logique pour déterminer le type MIME
-    if (path.find(".html") != std::string::npos) return "text/html";
-    if (path.find(".css") != std::string::npos) return "text/css";
-    // Ajoutez d'autres types MIME selon les besoins
-    return ("text/plain");
-}
-
-t_httpResponse HttpHandler::serveStaticFile(const std::string& path) 
-{
-    if (!isSafePath(path))
-    {
-      return (HandlerErrorHttp(403));
-    }
+    parsing = HttpHandler::post_parse_header_request(request);
+    if (parsing.body.empty())  {
+      
+      body = request.body;
+      link = location["/"].getRoot() + request.path;
     
-    std::ifstream file(path.c_str(), std::ios::binary);
-    if (!file.is_open())
-    {
-      std::cout << COLOR_MAGENTA << path << ":" << COLOR_RESET << std::endl;
-      return (HandlerErrorHttp(404));
-    }
-
-    std::stringstream buffer;
-    buffer << file.rdbuf();
-    std::string content = buffer.str();
-
-    t_httpResponse response;
-    response.status = 200;
-    response.headers["Content-Type"] = getMimeType(path);
-    response.body = content;
+    } else  {
     
-    std::cout << COLOR_MAGENTA << "\n   ~~~~~~ METHODE END  ~~~~~~" << COLOR_RESET << std::endl;
-    return (response);
-}
-*/
-/* ========================================================================== */
-/*                              -- TOOLS --                                   */
-/* ========================================================================== */
-/*
-std::string HttpHandler::readFile(const std::string& filepath) 
-{
-    std::ifstream       file(filepath.c_str());
-    std::ostringstream  ss;
+      body = parsing.body;
+      link = location["/"].getRoot() + request.path + parsing.nameFile;
 
-    if (!file.is_open()) 
+    }
+
+
+    std::ofstream fichier(link.c_str());
+    if (parsing.body.empty() || fichier.is_open())
     {
-        return ""; // Le fichier n'existe pas ou n'a pas les droits de lecture
+      fichier << body;
+      fichier.close();
+      /*    TO DO  -- delete the gestion of responst struct */ 
+      response.status = 201;
+      response.headers["Date"] = HttpHandler::getCurrentHttpDate();
+      response.headers["Connection"] = "close";
+      //response.headers["Content-Type"] = "text/html";
+
+      //response.headers = parsing.headers;
+      
+      std::cout << COLOR_GREEN << "Success : Created file " << location["/"].getRoot() + request.path + parsing.nameFile << COLOR_RESET << std::endl;
+      return (response);
     }
-    ss << file.rdbuf();
+    else 
+      response.status = 403;
+  
+  } else {
     
-    return (ss.str());
+    response.status = 409;
+    std::cout << COLOR_YELLOW << "Warnig : Faile Created file " << location["/"].getRoot() + request.path + parsing.nameFile << COLOR_RESET << std::endl;
+
+  }
+
+  return (HandlerErrorHttp(response.status, config));
 }
-*/
-/* ========================================================================== */
-/*
-bool HttpHandler::isStaticFile(const std::string& path)
-{
-    if (path.find("/static/") == 0 ||
-        path.substr(path.find_last_of(".") + 1) == "html" ||
-        path.substr(path.find_last_of(".") + 1) == "css" ||
-        path.substr(path.find_last_of(".") + 1) == "js") {
-        return true;
-    }
-    return false;
-}
-*/
+
 /* ========================================================================== */
 /*                          -- tools of POST METHODE  --                      */
 /* ========================================================================== */
-/*
+
 
 static std::string  post_length_body(t_httpRequest request)
 {
@@ -318,9 +229,9 @@ static void cleanMultipartBody(t_post_methode* postData) {
     // Mettre à jour le body avec le contenu nettoyé
     postData->body = fileContent;
 }
-*/
+
 /* ========================================================================== */
-/*
+
 t_post_methode HttpHandler::post_parse_header_request(t_httpRequest request)
 {
   t_post_methode  parsing;
@@ -341,7 +252,7 @@ t_post_methode HttpHandler::post_parse_header_request(t_httpRequest request)
   cleanMultipartBody(&parsing);
   return (parsing);
 }
-*/
+
 /* ************************************************************************** */
 /*                                                                            */
 /* ************************************************************************** */

@@ -6,7 +6,7 @@
 /*   By: lcluzan <lcluzan@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/02/25 17:24:16 by bchallat          #+#    #+#             */
-/*   Updated: 2026/06/10 14:55:48 by bchallat         ###   ########.fr       */
+/*   Updated: 2026/06/12 12:48:56 by bchallat         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -105,10 +105,14 @@ static void handler_conection(EventLoop &loop, const std::vector<ServerConfig>& 
 
       std::string string_request;
       string_request = readFullHttpRequest(fd, loop);
-      
-      ServerConfig config = getConfigForHandler(vec_config, getPortServer(fd));
+     
+      if (string_request.empty())
+     {
+        loop.removeClient(fd);
+        continue ;
+     }
 
-      std::cout << "Server port for fd=" << fd << ": " << getPortServer(fd) << std::endl;
+      ServerConfig config = getConfigForHandler(vec_config, getPortServer(fd));
 
       t_httpRequest request = HttpHandler::setHttpRequest(string_request);
       print_http_request(request);
@@ -117,7 +121,8 @@ static void handler_conection(EventLoop &loop, const std::vector<ServerConfig>& 
       std::string raw_response = response.toString();
       loop.sendResponse(fd, raw_response);
 
-      if (response.status == 400)
+      if (response.status == 201 || response.status == 400 || response.status == 405)
+      if (response.headers["Connection"] == "close")
       {
         loop.removeClient(fd);
       }
