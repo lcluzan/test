@@ -6,7 +6,7 @@
 /*   By: lcluzan <lcluzan@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/07 13:48:28 by bchallat          #+#    #+#             */
-/*   Updated: 2026/06/12 15:39:00 by bchallat         ###   ########.fr       */
+/*   Updated: 2026/06/16 12:00:58 by lcluzan          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,7 +32,7 @@ t_httpRequest  HttpHandler::setHttpRequest(const std::string& raw_request)
   {
     std::cout << COLOR_YELLOW << "Warging : bad request " << COLOR_RESET << std::endl;
   }
-  
+
   return ( request );
 }
 
@@ -45,15 +45,19 @@ t_httpResponse HttpHandler::setHttpResponse(t_httpRequest request, const ServerC
 {
 	t_httpResponse                        response;
   std::map<std::string, std::string>    headers;
-  std::map<std::string, LocationConfig>	location = config.getLocationConfig();
-  
+  std::map<std::string, LocationConfig> location = config.getLocationConfig();
+
+  if (request.headers.empty())
+  {
+    return (HandlerErrorHttp(400, request, config));
+  }
 	if (!location["/"].checkMethod(request.method))
 	{
-    return (HandlerErrorHttp(405, config));
+    return (HandlerErrorHttp(405, request, config));
   }
   else if (request.path.find("/cgi-bin/") == 0 || request.path.find(".php") != std::string::npos || request.path.find(".py") != std::string::npos)
   {
-    return HttpHandler::executeCgi(request.path, request);
+    return HttpHandler::executeCgi(request.path, request, config);
   }
   else if (request.method == "GET")
   {
@@ -69,7 +73,7 @@ t_httpResponse HttpHandler::setHttpResponse(t_httpRequest request, const ServerC
   }
   else
   {
-    return (HandlerErrorHttp(400, config));
+    return (HandlerErrorHttp(500, request, config));
   }
 	return ( response );
 }
@@ -79,18 +83,20 @@ t_httpResponse HttpHandler::setHttpResponse(t_httpRequest request, const ServerC
 /* ========================================================================== */
 
 
-t_httpResponse HttpHandler::HandlerErrorHttp(int status, const ServerConfig& config)
+t_httpResponse HttpHandler::HandlerErrorHttp(int status, t_httpRequest request, const ServerConfig& config)
 {
 	t_httpResponse                      response;
   std::map<std::string, std::string>  headers;
-  std::string body;
+  std::string                         body;
+
   std::map<std::string, LocationConfig>	location = config.getLocationConfig();
-  std::map<int, std::string> page = location["/"].getErrorPage();
+  std::map<int, std::string>            page = location["/"].getErrorPage();
+  //std::set<std::string>                 allow = location["/"].getMethods();
 
   headers["Date"] = getCurrentHttpDate();
   headers["Connection"] = "close";
   headers["Content-Type"] = "text/html";
-  
+
   std::string open = location["/"].getRoot() + "/" + page[status];
   std::ifstream file(open.c_str(), std::ios::binary);
   std::ostringstream oss;
@@ -102,44 +108,52 @@ t_httpResponse HttpHandler::HandlerErrorHttp(int status, const ServerConfig& con
     body = buffer.str();
 
   }
-
-  else if (status == 301)
-  {
-    body = def_301; 
+  else if (status == 301) {
+    headers["Location"] = "http://" + request.headers["Host"] ;
+    body = def_301;
   }
-  else if (status == 302)
-    body = def_302; 
-
-  else if (status == 304)
-    body = def_304; 
-
+  else if (status == 302) {
+    headers["Location"] = "http://" + request.headers["Host"] ;
+    body = def_302;
+  }
+  else if (status == 304) {
+    headers["Location"] = "http://" + request.headers["Host"] ;
+    body = def_304;
+  }
   else if (status == 400)
-    body = def_400; 
+    body = def_400;
 
   else if (status == 403)
-    body = def_403; 
-    
-  else if (status == 404)
-    body = def_404; 
+    body = def_403;
 
-  else if (status == 405)
+  else if (status == 404)
+    body = def_404;
+
+  else if (status == 405) {
     body = def_405;
-  
+    if ( location["/"].checkMethod("GET"))
+      headers["Allow"] = "GET" ;
+    if ( location["/"].checkMethod("POST"))
+      headers["Allow"] += " POST" ;
+    if ( location["/"].checkMethod("POST"))
+      headers["Allow"] += " DELETE" ;
+  }
   else if (status == 500)
     body ="<html><body>500 Internal Server Error</body></html>";
-  
+
   else if (status == 501)
     body ="<html><body>501 Not Implemented</body></html>";
 
   else if (status == 204)
     body ="";
-
+    else if (status == 201)
+    body ="";
   oss << body.size();
   headers["Content-Length"] = oss.str();
 
   return (t_httpResponse(status, headers, body));
 }
- 
+
 /* ========================================================================== */
 /*                          -- HTTP METHODE --                                */
 /* ========================================================================== */
@@ -148,7 +162,7 @@ t_httpResponse HttpHandler::handler_methode_get(t_httpRequest& request, const Se
 {
   std::map<std::string, LocationConfig>	location = config.getLocationConfig();
       std::cout << COLOR_MAGENTA << "   ~~~~~~ METHODE GET  ~~~~~~\n" << COLOR_RESET << std::endl;
-  std::cout << COLOR_MAGENTA << location["/"].getRoot() + location["/"].getIndex() << COLOR_RESET << std::endl;
+  std::cout << COLOR_BLUE << location["/"].getRoot() + location["/"].getIndex() << COLOR_RESET << std::endl;
 
   if (request.path == "/" && location["/"].getAutoindex())
   {
@@ -170,7 +184,7 @@ t_httpResponse HttpHandler::handler_methode_post(t_httpRequest request, const Se
   t_post_methode                        parsing;
   t_httpResponse                        response;
   std::map<std::string, LocationConfig>	location;
-  
+
   location = config.getLocationConfig();
   std::cout << COLOR_MAGENTA << "   ~~~~~~ METHODE POST ~~~~~~\n" << COLOR_RESET << std::endl;
   if (request.body.empty() || location.empty()) {
@@ -189,16 +203,16 @@ t_httpResponse HttpHandler::handler_methode_post(t_httpRequest request, const Se
       fichier.close();
       response.status = 201;
       response.headers = parsing.headers;
-      
+
       std::cout << COLOR_GREEN << "Success : Created file " << location["/"].getRoot() + request.path + parsing.nameFile << COLOR_RESET << std::endl;
       std::cout << COLOR_MAGENTA << "\n   ~~~~~~ METHODE END  ~~~~~~" << COLOR_RESET << std::endl;
       return (response);
     }
-    else 
+    else
       response.status = 404;
-  
+
   } else {
-    
+
     response.status = 404;
     std::cout << COLOR_YELLOW << "Warnig : Faile Created file " << location["/"].getRoot() + request.path + parsing.nameFile << COLOR_RESET << std::endl;
 
@@ -220,9 +234,9 @@ t_httpResponse HttpHandler::handler_methode_delete(t_httpRequest& request, const
   if(remove((location["/"].getRoot() + request.path).c_str()) == 0) {
     status = 204;
     std::cout << COLOR_GREEN << "Success: " << location["/"].getRoot() + request.path <<" is delete !" << COLOR_RESET << std::endl;
-  
+
   }else {
-    status = 404 ; 
+    status = 404 ;
     std::cout << COLOR_RED << "Le fichier n'a pas été supprimer a cause qu'il n'existe pas, un droit d'accès refusé,..." << COLOR_RESET << std::endl;
   }
   std::cout << COLOR_MAGENTA << "\n   ~~~~~~  METHODE END  ~~~~~~" << COLOR_RESET << std::endl;

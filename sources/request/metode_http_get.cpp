@@ -23,18 +23,18 @@ t_httpResponse HttpHandler::handler_methode_get(t_httpRequest& request, const Se
 
   if (request.path == "/"  )
   {
-    return HttpHandler::serveStaticFile(location["/"].getRoot() + location["/"].getIndex(), config);
+    return HttpHandler::serveStaticFile(location["/"].getRoot() + location["/"].getIndex(), request, config);
   }
   else if (!HttpHandler::isStaticFile(location["/"].getRoot() + request.path))
   {
-    return (HandlerErrorHttp(404, config));
+    return (HandlerErrorHttp(301, request, config));
   }
   else if (HttpHandler::isStaticFile(location["/"].getRoot() + request.path))
   {
-    return (HttpHandler::serveStaticFile(location["/"].getRoot() + request.path, config));
+    return (HttpHandler::serveStaticFile(location["/"].getRoot() + request.path, request, config));
   }
   else{
-    return (HandlerErrorHttp(404, config));
+    return (HandlerErrorHttp(404, request, config));
   }
 }
 
@@ -56,18 +56,22 @@ std::string getMimeType(const std::string& path)
     return ("text/plain");
 }
 
-t_httpResponse HttpHandler::serveStaticFile(const std::string& path, const ServerConfig& config) 
+t_httpResponse HttpHandler::serveStaticFile(const std::string& path, t_httpRequest& request, const ServerConfig& config) 
 {
     if (!isSafePath(path))
     {
-      return (HandlerErrorHttp(403, config));
+      return (HandlerErrorHttp(403, request, config));
     }
-    
+    std::cout << "--" + path << std::endl;
+    if (request.path.find("/") == std::string::npos)
+    {
+      return (HandlerErrorHttp(301, request, config));
+    }
     std::ifstream file(path.c_str(), std::ios::binary);
     if (!file.is_open())
     {
       std::cout << COLOR_MAGENTA << path << ":" << COLOR_RESET << std::endl;
-      return (HandlerErrorHttp(404, config));
+      return (HandlerErrorHttp(404, request, config));
     }
 
     std::stringstream buffer;
@@ -77,6 +81,8 @@ t_httpResponse HttpHandler::serveStaticFile(const std::string& path, const Serve
     t_httpResponse response;
     response.status = 200;
     response.headers["Content-Type"] = getMimeType(path);
+    response.headers["Connection"] = "close";
+    response.headers["Date"] = getCurrentHttpDate();
     response.body = content;
     
     return (response);

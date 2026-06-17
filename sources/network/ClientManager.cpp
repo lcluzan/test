@@ -6,7 +6,7 @@
 /*   By: tjacquel <tjacquel@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/03/23 14:46:05 by bchallat          #+#    #+#             */
-/*   Updated: 2026/04/25 16:11:46 by tjacquel         ###   ########.fr       */
+/*   Updated: 2026/06/12 17:18:56 by tjacquel         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -52,8 +52,10 @@ void ClientManager::removeClient(int fd)
   ClientInfo* client = it->second;
   _fileDescriptorClient.erase(it);
 
-  if (close(fd) == -1)
-    std::cerr << "close() " << std::endl;
+  if (close(fd) == -1) {
+    // std::cerr << "close() " << std::endl;
+	throw std::runtime_error("close() failure");
+  }
   else
     std::cout << COLOR_CYAN <<"(Log Server) : close client fd=" << fd << COLOR_RESET << std::endl;
 

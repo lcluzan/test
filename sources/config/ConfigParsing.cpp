@@ -6,7 +6,7 @@
 /*   By: tjacquel <tjacquel@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/23 18:37:03 by tjacquel          #+#    #+#             */
-/*   Updated: 2026/06/04 17:14:12 by tjacquel         ###   ########.fr       */
+/*   Updated: 2026/06/11 16:33:02 by tjacquel         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -284,33 +284,52 @@ static void	loadConfigLines(std::vector<std::string>& lines, std::ifstream& inFi
 	}
 }
 
+void	checkPortDup(const std::vector<ServerConfig>& servers) {
+	std::ostringstream	thw;
+	std::set<int>		seenPorts;
+
+	for (size_t i = 0; i < servers.size(); ++i) {
+		int currentPort = servers.at(i).getPort();
+
+		// std::set::count() returns 1 if currentPort value exists within the std::set, 0 if it doesn't
+		if (seenPorts.count(currentPort) != 0) {
+			thw << "Config file error: duplicate port `" << currentPort << "` detected. Virtual hosting is not supported" << std::endl;
+			throw std::runtime_error(thw.str());
+		}
+
+		seenPorts.insert(currentPort);
+	}
+}
+
 void	confParsingHandler(const char* filepath, std::vector<ServerConfig>& virtual_servers) {
-	std::ifstream inFile(filepath);
+	std::ostringstream	thw;
+	std::ifstream		inFile(filepath);
 	if (!inFile.is_open()) {
-		std::ostringstream	thw;
 		thw << "cannot open input file `" << filepath << "`";
 		throw std::runtime_error(thw.str());
 	}
 
-	std::vector<std::string>lines;
+	std::vector<std::string>	lines;
 	loadConfigLines(lines, inFile);
 	inFile.close();
 
 
-	std::vector<std::string> tokens;
+	std::vector<std::string>	tokens;
 	loadTokens(tokens, lines, filepath);
 	if(PRINT) printTokens(tokens);
 	syntaxLinter(tokens);
 
 
-	std::vector<t_block>	block;
+	std::vector<t_block>		block;
 	astBuilder(block, tokens);
 
 	for (size_t i = 0; i < block.size(); i++) {
 		ServerConfig		new_server;
 		new_server.loadFromBlock(block.at(i));
-		virtual_servers.push_back(new_server);	
+		virtual_servers.push_back(new_server);
 	}
+
+	checkPortDup(virtual_servers);
 
 if (PRINT) {
 	for (size_t i = 0; i < virtual_servers.size(); i++) {

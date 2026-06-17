@@ -6,7 +6,7 @@
 /*   By: tjacquel <tjacquel@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/03/23 13:33:39 by bchallat          #+#    #+#             */
-/*   Updated: 2026/06/10 20:04:13 by tjacquel         ###   ########.fr       */
+/*   Updated: 2026/06/13 20:33:12 by tjacquel         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -119,7 +119,7 @@ int SocketHandler::acceptConnection(int socket_fd, std::string& client_ip, int& 
     }
     else
     {
-    //   // Make client NON-BLOCKING
+    //   Make client NON-BLOCKING
       int flags = fcntl(client_fd, F_GETFL, 0);
       if (flags != -1){
         fcntl(client_fd, F_SETFL, flags | O_NONBLOCK);
@@ -139,8 +139,13 @@ ssize_t SocketHandler::readFromSocket(int fd, char* buffer, size_t size)
 {
     ssize_t bytes_read = read(fd, buffer, size);
 
-    if (bytes_read == -1)
-        throw std::runtime_error("read() " + std::string(strerror(errno)));
+    if (bytes_read == -1) { // if we fail reading in client fd we close client port
+        // throw std::runtime_error("read() " + std::string(strerror(errno)));
+		std::cerr << COLOR_YELLOW << "Warning: read() failed on fd " << fd << COLOR_RESET << std::endl;
+	}
+	if (bytes_read == 0) { // client c.losed connection ?? to check if its ok to put that here or even necessary
+		std::cerr << COLOR_YELLOW << "Warning: write() returned 0 on fd " << fd << COLOR_RESET << std::endl;
+	}
 
     return bytes_read;
 }
@@ -149,8 +154,13 @@ ssize_t SocketHandler::writeToSocket(int fd, const char* buffer, size_t size)
 {
     ssize_t bytes_written = write(fd, buffer, size);
 
-    if (bytes_written == -1)
-        throw std::runtime_error("write() " + std::string(strerror(errno)));
+    if (bytes_written == -1) { // if we fail writting in client fd we close client port
+        // throw std::runtime_error("write() " + std::string(strerror(errno)));
+		std::cerr << COLOR_YELLOW << "Warning: write() failed on fd " << fd << COLOR_RESET << std::endl;
+	}
+	if (bytes_written == 0) { // client closed connection
+		std::cerr << COLOR_YELLOW << "Warning: write() returned 0 on fd " << fd << COLOR_RESET << std::endl;
+	}
 
     return bytes_written;
 }

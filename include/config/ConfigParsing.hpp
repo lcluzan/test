@@ -6,7 +6,7 @@
 /*   By: tjacquel <tjacquel@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/23 17:51:28 by tjacquel          #+#    #+#             */
-/*   Updated: 2026/06/08 15:29:26 by tjacquel         ###   ########.fr       */
+/*   Updated: 2026/06/11 14:48:09 by tjacquel         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,7 +16,7 @@
 # include <string>
 # include <vector>
 
-# define PRINT				0
+# define PRINT				1
 # define RUN_WITH_SERVER	1
 
 

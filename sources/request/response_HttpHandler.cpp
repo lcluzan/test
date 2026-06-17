@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   response_HttpHandler.cpp                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ton_utilisateur_42 <ton_email@student.42.  +#+  +:+       +#+        */
+/*   By: tjacquel <tjacquel@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/06/01 12:20:23 by ton_utilisate     #+#    #+#             */
-/*   Updated: 2026/06/12 11:21:53 by bchallat         ###   ########.fr       */
+/*   Created: 2026/06/01 12:20:23 by ton_utilisa       #+#    #+#             */
+/*   Updated: 2026/06/16 20:26:55 by tjacquel         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,12 +21,12 @@
 
 // Constructeur par défaut
 t_httpResponse::t_httpResponse()
-    : status(200), body("") {
+    : status(200), body(""), is_cgi(false) {
     headers.insert(std::make_pair("Content-Type", "text/html"));
 }
 // Constructeur paramétré
 t_httpResponse::t_httpResponse(int status, const std::map<std::string, std::string>& headers, const std::string& body)
-    : status(status), headers(headers), body(body) {}
+    : status(status), headers(headers), body(body), is_cgi(false) {}
 
 /* ========================================================================== */
 
@@ -80,7 +80,7 @@ std::string t_httpResponse::toString() const {
 /*                            -- CURR HTTP DATE --                            */
 /* ========================================================================== */
 
-std::string HttpHandler::getCurrentHttpDate() 
+std::string HttpHandler::getCurrentHttpDate()
 {
      std::time_t now = std::time(NULL);
     std::tm *gmTime = std::gmtime(&now);
@@ -95,12 +95,12 @@ std::string HttpHandler::getCurrentHttpDate()
 /*                 -- SERV STATIC FILE IMPLEMENT FONCTION  --                 */
 /* ========================================================================== */
 /*
-bool isSafePath(const std::string& path) 
+bool isSafePath(const std::string& path)
 {
   return (path.find("../") == std::string::npos); // Empêche les chemins relatifs (comme "../")
 }
 
-std::string getMimeType(const std::string& path) 
+std::string getMimeType(const std::string& path)
 {
     // Implémentez la logique pour déterminer le type MIME
     if (path.find(".html") != std::string::npos) return "text/html";
@@ -109,13 +109,15 @@ std::string getMimeType(const std::string& path)
     return ("text/plain");
 }
 
-t_httpResponse HttpHandler::serveStaticFile(const std::string& path) 
+t_httpResponse HttpHandler::serveStaticFile(const std::string& path)
 {
+
+	std::cout << COLOR_MAGENTA << "serveStaticFile()path=" << path << COLOR_RESET << std::endl;
     if (!isSafePath(path))
     {
       return (HandlerErrorHttp(403));
     }
-    
+
     std::ifstream file(path.c_str(), std::ios::binary);
     if (!file.is_open())
     {
@@ -131,7 +133,8 @@ t_httpResponse HttpHandler::serveStaticFile(const std::string& path)
     response.status = 200;
     response.headers["Content-Type"] = getMimeType(path);
     response.body = content;
-    
+	response.headers["Connection"] = "keep-alive";
+
     std::cout << COLOR_MAGENTA << "\n   ~~~~~~ METHODE END  ~~~~~~" << COLOR_RESET << std::endl;
     return (response);
 }
@@ -140,17 +143,17 @@ t_httpResponse HttpHandler::serveStaticFile(const std::string& path)
 /*                              -- TOOLS --                                   */
 /* ========================================================================== */
 /*
-std::string HttpHandler::readFile(const std::string& filepath) 
+std::string HttpHandler::readFile(const std::string& filepath)
 {
     std::ifstream       file(filepath.c_str());
     std::ostringstream  ss;
 
-    if (!file.is_open()) 
+    if (!file.is_open())
     {
         return ""; // Le fichier n'existe pas ou n'a pas les droits de lecture
     }
     ss << file.rdbuf();
-    
+
     return (ss.str());
 }
 */
@@ -179,7 +182,7 @@ static std::string  post_length_body(t_httpRequest request)
   if (!request.headers["Content-Length"].empty()) {
 
     length = request.headers["Content-Length"];
-  
+
   } else {
 
     std::cerr << COLOR_YELLOW << "[Warning] : don't find length of body" << COLOR_RESET << std::endl;
@@ -196,11 +199,11 @@ static std::string  post_boundary(t_httpRequest request)
 
   pos_boundary = request.headers["Content-Type"].find("boundary=");
   if (pos_boundary != std::string::npos) {
-    
+
     boundary = request.headers["Content-Type"].substr(pos_boundary + 9);
   } else {
 
-    std::cerr << COLOR_YELLOW << "[Warning] : don't find a boundary in headers" << COLOR_RESET <<std::endl; 
+    std::cerr << COLOR_YELLOW << "[Warning] : don't find a boundary in headers" << COLOR_RESET <<std::endl;
   }
 
   return ( boundary );
@@ -229,7 +232,7 @@ static std::map<std::string, std::string> post_hastable_header(t_httpRequest req
     headers[key] = value;
     //headers.insert(std::pair<std::string, std::string>(key, value));
     std::cout << COLOR_MAGENTA << key << headers[key] << COLOR_RESET << std::endl;
-    
+
   }
 
   return ( headers );
@@ -238,26 +241,26 @@ static std::map<std::string, std::string> post_hastable_header(t_httpRequest req
 static std::string  post_name_file( t_post_methode parsing)
 {
   std::string   name;
-  
+
   std::string str = parsing.headers["Content-Disposition"];
   size_t filename_pos = str.find("filename=\"");
-  if (filename_pos != std::string::npos) 
+  if (filename_pos != std::string::npos)
   {
 
     size_t start_quote = filename_pos + 10; // 9 = longueur de "filename=\""
     size_t end_quote = str.find("\"", start_quote);
-    if (end_quote != std::string::npos) 
+    if (end_quote != std::string::npos)
     {
             name = str.substr(start_quote, end_quote - start_quote);
             std::cout << COLOR_MAGENTA << "Nom du fichier : " << name << COLOR_RESET << std::endl;
-    } 
-    else 
-    {    
-      std::cerr << COLOR_YELLOW << "[Warning] : don't find a closing quote in name file " << COLOR_RESET <<std::endl; 
     }
-  
-  } 
-  else {  
+    else
+    {
+      std::cerr << COLOR_YELLOW << "[Warning] : don't find a closing quote in name file " << COLOR_RESET <<std::endl;
+    }
+
+  }
+  else {
       std::cerr << "Erreur : 'filename=\"' non trouvé dans Content-Type." << std::endl;
   }
   return ( name );
@@ -266,7 +269,7 @@ static std::string  post_name_file( t_post_methode parsing)
 
 
 static void cleanMultipartBody(t_post_methode* postData) {
-    
+
     // Vérifier si le boundary est présent
     if (postData->boundary.empty()) {
         // Si ce n'est pas une requête multipart, le body est déjà propre
@@ -324,10 +327,10 @@ static void cleanMultipartBody(t_post_methode* postData) {
 t_post_methode HttpHandler::post_parse_header_request(t_httpRequest request)
 {
   t_post_methode  parsing;
-  
+
   if ((parsing.bodyLength = post_length_body(request)).empty() )
     return ( parsing );
- 
+
   if ((parsing.boundary = post_boundary(request)).empty() )
     return ( parsing );
 

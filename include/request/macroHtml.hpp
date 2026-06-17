@@ -80,7 +80,7 @@ const char* def_400 =
     "<!DOCTYPE html>\n"
     "<html>\n"
     "<head>\n"
-    "    <title>404 Bad Request</title>\n"
+    "    <title>400 Bad Request</title>\n"
     "    <style>\n"
     "        body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; }\n"
     "        h1 { color: #ff0000; }\n"

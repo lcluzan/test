@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   parsing_HttpHandler.cpp                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: bchallat <bchallat@student.42.fr>          +#+  +:+       +#+        */
+/*   By: tjacquel <tjacquel@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/01 11:55:55 by bchallat          #+#    #+#             */
-/*   Updated: 2026/06/10 10:05:39 by bchallat         ###   ########.fr       */
+/*   Updated: 2026/06/10 20:24:45 by tjacquel         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -196,7 +196,7 @@ static void lx_tokenizer(std::vector<t_token>& lexer)
         else if (i > 0)
         {
             // Si le token précédent est un COLON, alors c'est une HEADER_VALUE
-            if (i > 0 && lexer[i - 3].type == COLON)
+            if (i > 2 && lexer.at(i - 3).type == COLON)
             {
                 token.type = HEADER_VALUE;
             }
@@ -233,7 +233,7 @@ std::vector<t_token> HttpHandler::lexing(const std::string raw_request)
   if (hash.empty())
   {
     std::cerr << COLOR_RED << "ERROR:: has request lexer failure" << COLOR_RESET << std::endl;
-    return ( lexer ); 
+    return ( lexer );
   }
 
   lexer = lx_write_value(hash);
@@ -274,7 +274,7 @@ static bool dd_first_line(const std::vector<t_token>& lexer)
 static bool dd_header_line(const std::vector<t_token>& lexer)
 {
   size_t index = 5;
-  
+
   while (index < lexer.size() && lexer[index].type != CRLF)
   {
     if (index + 5 >= lexer.size())
@@ -346,7 +346,7 @@ bool  HttpHandler::descending_deriv(std::vector<t_token>& lexer)
     return ( false );
   }
   if (!dd_end_of_headers(lexer))  // Vérifie la fin des headers
-  { 
+  {
     std::cout << COLOR_RED << "Error : descending deriv bad end of header" << COLOR_RESET << std::endl;
     return (false);
   }
@@ -374,7 +374,7 @@ static void   init_hash_table_header(t_httpRequest& request, std::vector<t_token
     {
       h_value = lexer[index].value;
       request.headers[h_key] = h_value;
-    
+
       h_key.clear();
       h_value.clear();
     }
@@ -403,12 +403,12 @@ t_httpRequest HttpHandler::struct_http_request(std::vector<t_token>& lexer)
   size_t        indx = 0;
   t_httpRequest request;
 
-  while (indx < lexer.size()) 
+  while (indx < lexer.size())
   {
     st_write_in_struct(request, lexer[indx]);
     indx++;
   }
-  
+
   init_hash_table_header(request, lexer);
   return (request);
 }

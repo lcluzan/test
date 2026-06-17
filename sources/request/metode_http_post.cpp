@@ -58,12 +58,13 @@ t_httpResponse HttpHandler::handler_methode_post(t_httpRequest request, const Se
       response.status = 201;
       response.headers["Date"] = HttpHandler::getCurrentHttpDate();
       response.headers["Connection"] = "close";
-      //response.headers["Content-Type"] = "text/html";
+      response.headers["Location"] = "http://" + request.headers["Host"] ;
+      response.headers["Content-Type"] = "text/html";
 
       //response.headers = parsing.headers;
       
       std::cout << COLOR_GREEN << "Success : Created file " << location["/"].getRoot() + request.path + parsing.nameFile << COLOR_RESET << std::endl;
-      return (response);
+      return (HandlerErrorHttp(response.status, request, config));
     }
     else 
       response.status = 403;
@@ -75,7 +76,7 @@ t_httpResponse HttpHandler::handler_methode_post(t_httpRequest request, const Se
 
   }
 
-  return (HandlerErrorHttp(response.status, config));
+  return (HandlerErrorHttp(response.status, request, config));
 }
 
 /* ========================================================================== */

@@ -6,15 +6,13 @@
 /*   By: tjacquel <tjacquel@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/20 19:42:36 by lcluzan           #+#    #+#             */
-/*   Updated: 2026/06/08 14:41:19 by tjacquel         ###   ########.fr       */
+/*   Updated: 2026/06/11 17:18:17 by tjacquel         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include <config/ServerConfig.hpp>
 
-ServerConfig::ServerConfig() : host("0.0.0.0"), port(8000), client_max_body_size(8000000) {
-	this->server_name.push_back("");
-}
+ServerConfig::ServerConfig() : host("0.0.0.0"), port(8000), client_max_body_size(8000000) { }
 
 ServerConfig::~ServerConfig() {}
 
@@ -24,10 +22,6 @@ std::string								ServerConfig::getHost() const {
 
 int										ServerConfig::getPort() const {
 	return (this->port);
-}
-
-std::vector<std::string>				ServerConfig::getServerName() const {
-	return (this->server_name);
 }
 
 int										ServerConfig::getClientMaxBodySize() const {
@@ -41,9 +35,6 @@ std::map<std::string, LocationConfig>	ServerConfig::getLocationConfig() const {
 void	ServerConfig::printServerConfig(const size_t i) const {
 	std::cout << "\nvirtual_servers[" << i << "].host=" << this->host << std::endl;
 	std::cout << "virtual_servers[" << i << "].port=" << this->port << std::endl;
-	for (size_t j = 0; j < this->server_name.size(); ++j) {
-		std::cout << "virtual_servers[" << i << "].server_name[" << j << "]=" << this->server_name[j] << std::endl;
-	}
 	std::cout << "virtual_servers[" << i << "].clients_max_body_size=" << this->client_max_body_size << std::endl;
 
 	if (this->location.size() > 0) {
@@ -150,23 +141,6 @@ void	ServerConfig::listenDirCheckAndLoad(const std::vector<std::string>& curr_di
 	}
 }
 
-void	ServerConfig::server_nameDirCheckAndLoad(const std::vector<std::string>& curr_dir) {
-	if (curr_dir.size() < 2) {
-		std::ostringstream	thw;
-		thw << "Config file error: at least one argument expected for server_name directive";
-		throw std::logic_error(thw.str());
-	}
-
-	if (this->server_name.size() == 1 && this->server_name[0] == "") {
-		this->server_name.clear();
-	}
-
-	for (size_t i = 1; i < curr_dir.size(); ++i) {
-			this->server_name.push_back(curr_dir[i]);
-	}
-
-}
-
 void	ServerConfig::cmbsDirCheckAndLoad(const std::vector<std::string>& curr_dir) {
 	// I chose to rewrite client_max_body_size if there was a new directive
 	std::ostringstream	thw;
@@ -175,9 +149,9 @@ void	ServerConfig::cmbsDirCheckAndLoad(const std::vector<std::string>& curr_dir)
 		throw std::logic_error(thw.str());
 	}
 
-	std::string	arg = curr_dir.at(1);
-	char		last_char = arg.at(arg.length() - 1);
-	long long	multiplier = 1;
+	std::string		arg = curr_dir.at(1);
+	char			last_char = arg.at(arg.length() - 1);
+	unsigned long	multiplier = 1;
 
 	// kilobit
 	if (last_char == 'k' || last_char == 'K') {
@@ -195,8 +169,8 @@ void	ServerConfig::cmbsDirCheckAndLoad(const std::vector<std::string>& curr_dir)
 		arg = arg.substr(0, arg.length() - 1);
 	}
 
-	int			base_value = ft_stoi(arg)	;
-	long long	final_value = static_cast<long long>(base_value) * multiplier;
+	int				base_value = ft_stoi(arg)	;
+	unsigned long	final_value = static_cast<unsigned long>(base_value) * multiplier;
 
 	if (final_value > CLIENT_MAX_BODY_SIZE_LIMIT) {
 		thw << "Config file error: client_max_body_size exceeds or is equal to 2GB maximum limit";
@@ -216,9 +190,6 @@ void	ServerConfig::loadFromBlock(const t_block& curr_block) {
 	for (size_t i = 0; i < curr_block.directives.size(); i++) {
 		if (curr_block.directives[i][0] == "listen") {
 			listenDirCheckAndLoad(curr_block.directives[i]);
-		}
-		else if (curr_block.directives[i][0] == "server_name") {
-			server_nameDirCheckAndLoad(curr_block.directives[i]);
 		}
 		else if (curr_block.directives[i][0] == "client_max_body_size") {
 			cmbsDirCheckAndLoad(curr_block.directives[i]);
