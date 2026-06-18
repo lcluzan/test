@@ -6,7 +6,7 @@
 /*   By: lcluzan <lcluzan@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/07 13:48:28 by bchallat          #+#    #+#             */
-/*   Updated: 2026/06/16 12:00:58 by lcluzan          ###   ########.fr       */
+/*   Updated: 2026/06/17 21:42:07 by lcluzan          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,19 +46,41 @@ t_httpResponse HttpHandler::setHttpResponse(t_httpRequest request, const ServerC
 	t_httpResponse                        response;
   std::map<std::string, std::string>    headers;
   std::map<std::string, LocationConfig> location = config.getLocationConfig();
+  // std::string fullPath = location[prefix].getRoot() + request.path ;
+  // LocationConfig current_loc = location[prefix];
+
+  // si ya un query ? on a quand meme besoin d'extraire le path sans le ? et ce quil y a apres
+  std::string actual_path = request.path;
+  size_t q_pos = actual_path.find('?');
+  if (q_pos != std::string::npos) {
+    actual_path = actual_path.substr(0, q_pos);
+  }
+
+    std::string prefix = find_location(location, actual_path);
+    LocationConfig current_loc = location[prefix];
+
 
   if (request.headers.empty())
   {
     return (HandlerErrorHttp(400, request, config));
   }
-	if (!location["/"].checkMethod(request.method))
+	if (!location[prefix].checkMethod(request.method))
 	{
     return (HandlerErrorHttp(405, request, config));
   }
-  else if (request.path.find("/cgi-bin/") == 0 || request.path.find(".php") != std::string::npos || request.path.find(".py") != std::string::npos)
-  {
-    return HttpHandler::executeCgi(request.path, request, config);
+
+  // New dynamic CGI location check
+  std::string extension = "";
+  size_t dot_pos = actual_path.find_last_of(".");
+  if (dot_pos != std::string::npos) {
+    extension = actual_path.substr(dot_pos);
   }
+  std::map<std::string, std::string> cgi_map = current_loc.getCgiPass();
+  if (!extension.empty() && cgi_map.find(extension) != cgi_map.end()) {
+    std::string interpreter = cgi_map[extension]; // e.g., "/usr/bin/php-cgi"
+    return HttpHandler::executeCgi(request.path, request, config, interpreter, current_loc);
+  }
+
   else if (request.method == "GET")
   {
     return (HttpHandler::handler_methode_get(request, config));
@@ -131,12 +153,9 @@ t_httpResponse HttpHandler::HandlerErrorHttp(int status, t_httpRequest request, 
 
   else if (status == 405) {
     body = def_405;
-    if ( location["/"].checkMethod("GET"))
-      headers["Allow"] = "GET" ;
-    if ( location["/"].checkMethod("POST"))
-      headers["Allow"] += " POST" ;
-    if ( location["/"].checkMethod("POST"))
-      headers["Allow"] += " DELETE" ;
+    if ( location["/"].checkMethod("GET"))  { headers["Allow"] += " GET   "; }
+    if ( location["/"].checkMethod("POST")) { headers["Allow"] += " POST  "; }
+    if ( location["/"].checkMethod("POST")) { headers["Allow"] += " DELETE"; }
   }
   else if (status == 500)
     body ="<html><body>500 Internal Server Error</body></html>";

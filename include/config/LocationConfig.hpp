@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   LocationConfig.hpp                                 :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: tjacquel <tjacquel@student.42.fr>          +#+  +:+       +#+        */
+/*   By: lcluzan <lcluzan@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/23 17:24:59 by tjacquel          #+#    #+#             */
-/*   Updated: 2026/06/08 15:18:23 by tjacquel         ###   ########.fr       */
+/*   Updated: 2026/06/17 20:01:19 by lcluzan          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,6 +21,7 @@
 # include <algorithm>
 # include <utility>
 # include <cstdlib>
+# include <unistd.h> // for access()
 # include "ConfigParsing.hpp"
 # include "ConfigParsingUtils.hpp"
 
@@ -41,17 +42,19 @@ public:
 	void						redirectDirCheckAndLoad(const std::vector<std::string>& returnDir);
 	void						errorpageDirCheckAndLoad(const std::vector<std::string>& error_pageDir);
 	void						parseCgiPass(const std::vector<std::string>& cgiPassDir);
+	bool						isValidCgiPair(const std::string& extension, const std::string executable) const;
+
 
 	// Getter methods
-	std::string					getRoot() const;
-	std::set<std::string>		getMethods() const;
-	std::string					getIndex() const;
-	bool						getAutoindex() const;
-	bool						getUploadEnable() const;
-	std::string					getUploadLoc() const;
-	std::pair<int, std::string>	getRedirect() const;
-	std::map<int, std::string>	getErrorPage() const;
-	std::string					getCgiPass() const;
+	std::string							getRoot() const;
+	std::set<std::string>				getMethods() const;
+	std::string							getIndex() const;
+	bool								getAutoindex() const;
+	bool								getUploadEnable() const;
+	std::string							getUploadLoc() const;
+	std::pair<int, std::string>			getRedirect() const;
+	std::map<int, std::string>			getErrorPage() const;
+	std::map<std::string, std::string>	getCgiPass() const;
 
 	bool						checkMethod(const std::string& str) const;
 
@@ -59,15 +62,15 @@ public:
 	void						printLocationConfig() const;
 
 private:
-	std::string					root;
-	std::set<std::string>		methods; // USAGE: if (this->methods.find("POST") != this->methods.end()) { // POST is allowed! [...] }
-	std::string					index;
-	bool						autoindex;
-	bool						upload_enable;
-	std::string					upload_loc;
-	std::pair<int, std::string>	redirect;
-	std::map<int, std::string>	error_page;
-	std::string					cgi_pass;
+	std::string							root;
+	std::set<std::string>				methods; // USAGE: if (this->methods.find("POST") != this->methods.end()) { // POST is allowed! [...] }
+	std::string							index;
+	bool								autoindex;
+	bool								upload_enable;
+	std::string							upload_loc;
+	std::pair<int, std::string>			redirect;
+	std::map<int, std::string>			error_page;
+	std::map<std::string, std::string>	cgi_pass; // KEY=extension, VALUE=executable
 
 } ;
 

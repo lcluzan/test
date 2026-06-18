@@ -90,7 +90,36 @@ std::string HttpHandler::getCurrentHttpDate()
     return std::string(buffer);
 }
 
+/* ========================================================================== */
+/*
+static void   unitt_find_location(std::string& str) {
+//    -- fonction of unitaire test find location -- //
 
+  std::cout << COLOR_MAGENTA << "result find fonction: " + str << COLOR_RESET << std::endl;
+
+}
+*/
+
+std::string HttpHandler::find_location(std::map<std::string, LocationConfig>	location, std::string path)
+{
+  std::string bestMatch;
+  size_t bestMatchLength = 0;
+  std::string loc;
+
+  for (std::map<std::string, LocationConfig>::iterator itr = location.begin(); itr != location.end(); itr++)  {
+        loc = itr->first;
+        if ( loc != "/" && path.find("/" + loc) == 0)// Vérifie si la location est un préfixe du path
+        {
+            if (loc.length() > bestMatchLength) {
+                bestMatch = loc;
+                bestMatchLength = loc.length();
+            }
+        }
+    }
+    if (bestMatch == "")
+      bestMatch = "/";
+    return ( bestMatch );
+}
 /* ========================================================================== */
 /*                 -- SERV STATIC FILE IMPLEMENT FONCTION  --                 */
 /* ========================================================================== */

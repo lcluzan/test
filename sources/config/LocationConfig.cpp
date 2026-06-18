@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   LocationConfig.cpp                                 :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: tjacquel <tjacquel@student.42.fr>          +#+  +:+       +#+        */
+/*   By: lcluzan <lcluzan@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/23 17:23:36 by tjacquel          #+#    #+#             */
-/*   Updated: 2026/06/11 17:07:17 by tjacquel         ###   ########.fr       */
+/*   Updated: 2026/06/17 20:05:48 by lcluzan          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -48,7 +48,7 @@ std::map<int, std::string>	LocationConfig::getErrorPage() const {
 	return (this->error_page);
 }
 
-std::string				LocationConfig::getCgiPass() const {
+std::map<std::string, std::string>	LocationConfig::getCgiPass() const {
 	return (this->cgi_pass);
 }
 
@@ -94,19 +94,55 @@ void	LocationConfig::printLocationConfig() const {
 		}
 	}
 	if (!this->cgi_pass.empty()) {
-		std::cout << "    cgi_pass=" << this->cgi_pass << std::endl;
+		std::map<std::string, std::string>::const_iterator it;
+		for (it = this->cgi_pass.begin(); it != this->cgi_pass.end(); ++it) {
+			std::cout << "    cgi_pass[" << it->first << "]=" << it->second << std::endl;
+		}
 	}
+}
+
+bool	LocationConfig::isValidCgiPair(const std::string& extension, const std::string executable) const {
+	if (extension == ".py" && executable.find("python3") != std::string::npos) {
+		return true;
+	}
+	if (extension == ".php" && executable.find("php-cgi") != std::string::npos) {
+		return true;
+	}
+	if (extension == ".sh" && executable.find("bash") != std::string::npos) {
+		return true;
+	}
+	return (false);
 }
 
 void	LocationConfig::parseCgiPass(const std::vector<std::string>& cgiPassDir) {
 	std::ostringstream	thw;
-	if (cgiPassDir.size() != 2) {
-		thw << "Config file error: single mandatory exepcted for cgi_pass directive, found " << cgiPassDir.size() - 1;
+	if (cgiPassDir.size() != 3) {
+		thw << "Config file error: double mandatory argument exepected for cgi_pass directive, found " << cgiPassDir.size() - 1;
 		throw std::logic_error(thw.str());
 	}
 
-	this->cgi_pass = cgiPassDir.at(1);
+	std::string extension = cgiPassDir.at(1);
+	std::string executable = cgiPassDir.at(2);
 
+	// 1. Duplicate check
+	if (this->cgi_pass.find(extension) != this->cgi_pass.end()) {
+		thw << "Config file error: duplicate cgi_pass directive found for extension `" << extension << "`";
+		throw std::logic_error(thw.str());
+	}
+
+	// 2. Valid pair check
+	if (!isValidCgiPair(extension, executable)) {
+		thw << "Config file error: `" << extension << "-" << executable << "` extension-executable pair found is not supported for cgi_pass directive";
+		throw std::logic_error(thw.str());
+	}
+
+	// 3. Existence and permission check
+	if (access(executable.c_str(), X_OK) != 0) {
+		thw << "Config file error: CGI executable not found or missing execution rights at `" << executable << "`";
+		throw std::runtime_error(thw.str());
+	}
+
+	this->cgi_pass.insert(std::pair<std::string, std::string>(extension, executable));
 }
 
 void	LocationConfig::errorpageDirCheckAndLoad(const std::vector<std::string>& error_pageDir) {

@@ -20,18 +20,26 @@ t_httpResponse HttpHandler::handler_methode_get(t_httpRequest& request, const Se
 {
   std::map<std::string, LocationConfig>	location = config.getLocationConfig();
   //std::cout << COLOR_MAGENTA << location["/"].getRoot() + location["/"].getIndex() << COLOR_RESET << std::endl;
+  std::string prefix = find_location(location, request.path);
+  std::string fullPath = location[prefix].getRoot() + request.path ;
+  std::cout << COLOR_MAGENTA << "full path ? " + fullPath << COLOR_RESET << std::endl;
 
-  if (request.path == "/"  )
+  if (!request.path.empty() && request.path[request.path.size() - 1] == '/')
   {
-    return HttpHandler::serveStaticFile(location["/"].getRoot() + location["/"].getIndex(), request, config);
+    if (location[prefix].getAutoindex())
+      return HttpHandler::serveIndex( fullPath + prefix, request, config);
+    else if (!location[prefix].getIndex().empty())
+      return (HttpHandler::serveStaticFile(fullPath + location[prefix].getIndex(), request, config));
+    else
+      return (HandlerErrorHttp(403, request, config));
   }
-  else if (!HttpHandler::isStaticFile(location["/"].getRoot() + request.path))
+  else if (!HttpHandler::isStaticFile(fullPath))
   {
     return (HandlerErrorHttp(301, request, config));
   }
-  else if (HttpHandler::isStaticFile(location["/"].getRoot() + request.path))
+  else if (HttpHandler::isStaticFile(fullPath))
   {
-    return (HttpHandler::serveStaticFile(location["/"].getRoot() + request.path, request, config));
+    return (HttpHandler::serveStaticFile(fullPath, request, config));
   }
   else{
     return (HandlerErrorHttp(404, request, config));
@@ -49,10 +57,10 @@ bool isSafePath(const std::string& path)
 
 std::string getMimeType(const std::string& path) 
 {
-    // Implémentez la logique pour déterminer le type MIME
+    // Implémentez la logique pour déterminer le type 
     if (path.find(".html") != std::string::npos) return ( "text/html" );
     if (path.find(".css") != std::string::npos) return ( "text/css" );
-    // Ajoutez d'autres types MIME selon les besoins
+    // Ajoutez d'autres types selon les besoins
     return ("text/plain");
 }
 
@@ -62,7 +70,6 @@ t_httpResponse HttpHandler::serveStaticFile(const std::string& path, t_httpReque
     {
       return (HandlerErrorHttp(403, request, config));
     }
-    std::cout << "--" + path << std::endl;
     if (request.path.find("/") == std::string::npos)
     {
       return (HandlerErrorHttp(301, request, config));
@@ -117,6 +124,105 @@ bool HttpHandler::isStaticFile(const std::string& path)
         return true;
     }
     return false;
+}
+
+/* ========================================================================== */
+/*                              -- AUTO INDEX --                              */
+/* ========================================================================== */
+
+#include <dirent.h>   // Pour opendir(), readdir(), closedir()
+#include <sys/stat.h> // Pour stat()
+#include <algorithm>  // Pour std::sort
+#include <ctime>      // Pour ctime()
+
+
+
+t_httpResponse HttpHandler::serveIndex(const std::string& path, t_httpRequest& request, const ServerConfig& config) 
+{
+    t_httpResponse response;
+    response.status = 200;
+    response.headers["Connection"] = "close";
+    response.headers["Date"] = getCurrentHttpDate();
+    response.body = HttpHandler::generateAutoIndexHTML(path);
+    if (response.body.empty()) {
+
+      return ( HandlerErrorHttp(500, request, config) );
+    }
+    //response.headers["Content-length"] = response.body.length();
+
+    return ( response );
+}
+
+std::string HttpHandler::generateAutoIndexHTML(const std::string& path) {
+
+    DIR* dir = opendir(path.c_str());
+    if (!dir) {
+        return ""; // Erreur : dossier inaccessible
+    }
+
+    std::vector<std::string> entries;
+    struct dirent* entry;
+
+    // Lire tous les fichiers/dossiers
+    while ((entry = readdir(dir)) != NULL) {
+        // Ignorer "." et ".."
+        if (std::string(entry->d_name) != "." && std::string(entry->d_name) != "..") {
+            entries.push_back(entry->d_name);
+        }
+    }
+    closedir(dir);
+
+    // Trier par ordre alphabétique
+    std::sort(entries.begin(), entries.end());
+
+    // Générer le HTML
+    std::string html = "<!DOCTYPE html>\n";
+    html += "<html>\n";
+    html += "<head>\n";
+    html += "    <title>Index of " + path + "</title>\n";
+    html += "    <style>\n";
+    html += "        body { font-family: Arial, sans-serif; margin: 20px; }\n";
+    html += "        h1 { color: #333; }\n";
+    html += "        table { border-collapse: collapse; width: 100%; }\n";
+    html += "        th { background-color: #f2f2f2; text-align: left; padding: 8px; }\n";
+    html += "        td { border-bottom: 1px solid #ddd; padding: 8px; }\n";
+    html += "        a { text-decoration: none; color: #0066cc; }\n";
+    html += "        a:hover { text-decoration: underline; }\n";
+    html += "    </style>\n";
+    html += "</head>\n";
+    html += "<body>\n";
+    html += "    <h1>Index of " + path + "</h1>\n";
+    html += "    <table>\n";
+    html += "        <tr><th>Name</th><th>Size</th><th>Last Modified</th></tr>\n";
+
+    // Ajouter chaque entrée
+    for (size_t i = 0; i < entries.size(); i++) 
+    {
+        std::string fullPath = path + "/" + entries[i];
+        struct stat fileStat;
+        
+        if (stat(fullPath.c_str(), &fileStat) == 0) 
+        {
+            std::string size = "-";
+
+            std::string date = ctime(&fileStat.st_mtime);
+            date.erase(date.size() - 1); // Supprimer le saut de ligne de ctime()
+
+            html += "        <tr>\n";
+            html += "            <td><a href=\"" + entries[i] + "\">" + entries[i] + "</a></td>\n";
+            html += "            <td>" + size + "</td>\n";
+            html += "            <td>" + date + "</td>\n";
+            html += "        </tr>\n";
+        }
+    }
+
+    html += "    </table>\n";
+    html += "</body>\n";
+    html += "</html>\n";
+    
+    std::cout << "->" + html + "END" << std::endl; 
+    
+    return html;
 }
 
 /* ========================================================================== */

@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stockage - webServ</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            text-align: center;
+        }
+        .container {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            max-width: 800px;
+            width: 90%;
+        }
+        h1 {
+            font-size: 60px;
+            color: #4a90e2;
+            margin: 0;
+            line-height: 1;
+        }
+        h2 {
+            font-size: 20px;
+            margin: 10px 0;
+            color: #555;
+        }
+        .search-bar {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            margin: 20px 0;
+            box-sizing: border-box;
+        }
+        .file-list {
+            text-align: left;
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #eee;
+            border-radius: 5px;
+            padding: 10px;
+            margin: 20px 0;
+            background-color: #f9f9f9;
+        }
+        .file-item {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .file-item:last-child {
+            border-bottom: none;
+        }
+        .file-item:hover {
+            background-color: #f0f0f0;
+        }
+        .file-actions {
+            display: flex;
+            gap: 10px;
+        }
+        .button {
+            background-color: #4a90e2;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .button:hover {
+            background-color: #3a7bc8;
+        }
+        .button-delete {
+            background-color: #e74c3c;
+        }
+        .button-delete:hover {
+            background-color: #c0392b;
+        }
+        .button-upload {
+            background-color: #2ecc71;
+        }
+        .button-upload:hover {
+            background-color: #27ae60;
+        }
+        .button-container {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .path {
+            font-family: monospace;
+            background-color: #f0f0f0;
+            padding: 5px 10px;
+            border-radius: 3px;
+            color: #555;
+            font-size: 14px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>webServ</h1>
+        <h2>Espace de stockage</h2>
+        
+        <input type="text" class="search-bar" id="search-bar" placeholder="Rechercher un fichier...">
+
+        <div class="button-container">
+            <a href="/upload" class="button button-upload">Uploader un fichier</a>
+            <button id="delete-button" class="button button-delete">Supprimer le fichier sélectionné</button>
+        </div>
+
+        <div class="file-list" id="file-list">
+            <!-- Exemple de fichiers (à remplacer par une liste dynamique côté serveur) -->
+            <div class="file-item">
+                <span>fichier1.txt</span>
+                <div class="file-actions">
+                    <button class="button button-delete" onclick="deleteFile('fichier1.txt')">Supprimer</button>
+                </div>
+            </div>
+            <div class="file-item">
+                <span>image.png</span>
+                <div class="file-actions">
+                    <button class="button button-delete" onclick="deleteFile('image.png')">Supprimer</button>
+                </div>
+            </div>
+            <div class="file-item">
+                <span>document.pdf</span>
+                <div class="file-actions">
+                    <button class="button button-delete" onclick="deleteFile('document.pdf')">Supprimer</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="path">Chemin actuel : <span id="current-path">/storage</span></div>
+    </div>
+
+    <script>
+        // Afficher le chemin actuel
+        document.getElementById('current-path').textContent = window.location.pathname;
+
+        // Fonction pour supprimer un fichier (exemple)
+        function deleteFile(filename) {
+            if (confirm(`Voulez-vous vraiment supprimer le fichier "${filename}" ?`)) {
+                alert(`Fichier "${filename}" supprimé (simulation).`);
+                // Ici, tu peux ajouter une requête HTTP DELETE vers ton serveur.
+            }
+        }
+
+        // Filtrer les fichiers en fonction de la recherche
+        document.getElementById('search-bar').addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            const fileItems = document.querySelectorAll('.file-item');
+            
+            fileItems.forEach(item => {
+                const fileName = item.querySelector('span').textContent.toLowerCase();
+                if (fileName.includes(searchTerm)) {
+                    item.style.display = 'flex';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        });
+
+        // Supprimer le fichier sélectionné (bouton principal)
+        document.getElementById('delete-button').addEventListener('click', function() {
+            const selectedFiles = document.querySelectorAll('.file-item input[type="radio"]:checked');
+            if (selectedFiles.length > 0) {
+                const filename = selectedFiles[0].nextElementSibling.textContent;
+                deleteFile(filename);
+            } else {
+                alert("Aucun fichier sélectionné.");
+            }
+        });
+    </script>
+</body>
+</html>

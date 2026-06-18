@@ -20,19 +20,23 @@ t_httpResponse HttpHandler::handler_methode_delete(t_httpRequest& request, const
 {
   int     status = 500;
   std::map<std::string, LocationConfig>	location = config.getLocationConfig();
+  std::string prefix = find_location(location, request.path);
+  std::string fullPath = location[prefix].getRoot() + request.path ;
+  std::cout << COLOR_MAGENTA << "full path ? " + fullPath << COLOR_RESET << std::endl;
+
 
   struct stat buffer;
-  if (stat((location["/"].getRoot() + request.path).c_str(), &buffer) != 0) {
+  if (stat((fullPath).c_str(), &buffer) != 0) {
 
         status = 404;
         std::cout << COLOR_RED << "Erreur : Le fichier '" << location["/"].getRoot() + request.path << "' n'existe pas." << COLOR_RESET << std::endl;
   }
-  else if (access((location["/"].getRoot() + request.path).c_str(), W_OK) != 0) {
+  else if (access((fullPath).c_str(), W_OK) != 0) {
 
         status = 403;
     std::cout << COLOR_RED << "Le fichier n'a pas été supprimer un droit d'accès refusé,..." << COLOR_RESET << std::endl;
   }
-  else if(remove((location["/"].getRoot() + request.path).c_str()) == 0) {
+  else if(remove((fullPath).c_str()) == 0) {
 
     status = 204;
     std::cout << COLOR_GREEN << "Success: " << location["/"].getRoot() + request.path <<" is delete !" << COLOR_RESET << std::endl;
@@ -40,7 +44,7 @@ t_httpResponse HttpHandler::handler_methode_delete(t_httpRequest& request, const
   }
   else {
     status = 404 ; 
-        std::cout << COLOR_RED << "Erreur : Le fichier '" << location["/"].getRoot() + request.path << "' n'existe pas." << COLOR_RESET << std::endl;
+        std::cout << COLOR_RED << "Erreur : Le fichier '" << fullPath << "' n'existe pas." << COLOR_RESET << std::endl;
   }
  
   return (HandlerErrorHttp(status, request, config));

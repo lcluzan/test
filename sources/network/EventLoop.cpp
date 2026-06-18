@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   EventLoop.cpp                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: tjacquel <tjacquel@student.42.fr>          +#+  +:+       +#+        */
+/*   By: lcluzan <lcluzan@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/03/25 06:01:32 by bchallat          #+#    #+#             */
-/*   Updated: 2026/06/16 21:05:17 by tjacquel         ###   ########.fr       */
+/*   Updated: 2026/06/17 21:48:04 by lcluzan          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -242,7 +242,7 @@ int EventLoop::waitForActivity() {
     for (size_t i = 0; i < _poll_fds.size(); i++) {
         _poll_fds[i].revents = 0;  // Réinitialise revents
     }
-    return poll(&_poll_fds[0], _poll_fds.size(), -1);
+    return poll(&_poll_fds[0], _poll_fds.size(), 1000);
 }
 
 
@@ -437,7 +437,7 @@ void	EventLoop::handleCgiEvent(int fd, short revents) {
 		handleCgiWrite(fd, CgiContext);
 	}
 
-	if ((revents & POLLIN) && fd == CgiContext.cgi_read_fd) {
+	if ((revents & (POLLIN | POLLHUP | POLLERR)) && fd == CgiContext.cgi_read_fd) {
 		handleCgiRead(fd, CgiContext);
 	}
 }

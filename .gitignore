@@ -40,14 +40,17 @@ Thumbs.db
 
 # file .exe #
 #############
-t_unit
 webserv
+sources/www/upload/forriben-delete.txt
 
 # obs #
 ############
-wiki/.obsidian/
-wiki/.obsidian/appearance.json
-wiki/.obsidian/app.json
-wiki/.obsidian/core-plugins.json
-wiki/.obsidian/workspace.json
+tech-stack/wiki/obs_webServ/.obsidian/
+tech-stack/wiki/obs_webServ/.obsidian/appearance.json
+tech-stack/wiki/obs_webServ/.obsidian/app.json
+tech-stack/wiki/obs_webServ/.obsidian/core-plugins.json
+tech-stack/wiki/obs_webServ/.obsidian/workspace.json
 
+# Large files #
+###############
+*large_file*
