@@ -6,11 +6,12 @@
 /*   By: tjacquel <tjacquel@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/07 13:48:28 by bchallat          #+#    #+#             */
-/*   Updated: 2026/06/19 14:04:08 by bchallat         ###   ########.fr       */
+/*   Updated: 2026/06/19 02:08:35 by tjacquel         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include <request/HttpHandler.hpp>
+#include <request/macroHtml.hpp>
 
 /* ========================================================================== */
 /*                          -- PARSING REQUESTE --                            */
@@ -125,13 +126,20 @@ t_httpResponse HttpHandler::setHttpResponse(t_httpRequest request, const ServerC
 /* ========================================================================== */
 
 
-std::string   HttpHandler::findAndOpenBody(int status, t_httpRequest request, const ServerConfig& config)
+t_httpResponse HttpHandler::HandlerErrorHttp(int status, t_httpRequest request, const ServerConfig& config)
 {
-  std::string                           body;
-  std::map<std::string, LocationConfig>	location = config.getLocationConfig();
-  std::string                           prefix = find_location(location, request.path);
-  std::map<int, std::string>            page = location[prefix].getErrorPage();
+	t_httpResponse                      response;
+  std::map<std::string, std::string>  headers;
+  std::string                         body;
 
+  std::map<std::string, LocationConfig>	location = config.getLocationConfig();
+  std::string prefix = find_location(location, request.path);
+  std::map<int, std::string>            page = location[prefix].getErrorPage();
+  //std::set<std::string>                 allow = location["/"].getMethods();
+
+  headers["Date"] = getCurrentHttpDate();
+  headers["Connection"] = "close";
+  headers["Content-Type"] = "text/html";
 
   std::string open = location[prefix].getRoot() + "/" + page[status];
   std::ifstream file(open.c_str(), std::ios::binary);
@@ -144,72 +152,55 @@ std::string   HttpHandler::findAndOpenBody(int status, t_httpRequest request, co
     body = buffer.str();
 
   }
-  
-  return (body);
-}
-
-/*
-
-void unitt-HandlerErrorHttp(int status, t_httpRequest request, const ServerConfig& config)
-*/
-
-void HttpHandler::setStructConfig(t_config directiv, const ServerConfig& serv, std::string path)
-{
-  directiv.location = serv.getLocationConfig();
-  directiv.prefix = find_location(directiv.location, path);
-  directiv.config = directiv.location[directiv.prefix]; 
-}
-/* ================================ ~CODE ====================================== */
-
-t_httpResponse HttpHandler::HandlerErrorHttp(int status, t_httpRequest request, const ServerConfig& serv)
-{
-  t_ErrorHttp   stError;
-  t_config      directiv;
-
-  setStructConfig(directiv, serv, request.path);
-  stError.response.body  = HttpHandler::findAndOpenBody(status, request, serv);
-
-  switch ( status ) {
-
-    case 201:
-      return ( HttpHandler::status_201(status, stError.response) );
-
-    case 204:
-      return ( HttpHandler::status_204(status, stError.response) );
-
-    case 301:
-      return ( HttpHandler::status_301(status, request, stError.response) );
-
-    case 302:
-      return ( HttpHandler::status_302(status, request, stError.response) );
-    
-    case 304:
-      return ( HttpHandler::status_304(status, request, stError.response) );
-
-    case 400:
-      return ( HttpHandler::status_400(status, stError.response) );
-    
-    case 403:
-      return ( HttpHandler::status_403(status, stError.response) );
-
-    case 404:
-      return ( HttpHandler::status_404(status, stError.response) );
-    
-    case 405:
-      return ( HttpHandler::status_405(status, stError.response, directiv) );
-
-    case 413:
-      return ( HttpHandler::status_413(status, stError.response) );
-
-    case 501:
-      return ( HttpHandler::status_501(status, stError.response) );
-
-    case 504:
-      return ( HttpHandler::status_504(status, stError.response) );
+  else if (status == 301) {
+    headers["Location"] = "http://" + request.headers["Host"] ;
+    body = def_301;
   }
-  
-  return ( HttpHandler::status_500(status, stError.response) );
+  else if (status == 302) {
+    headers["Location"] = "http://" + request.headers["Host"] ;
+    body = def_302;
+  }
+  else if (status == 304) {
+    headers["Location"] = "http://" + request.headers["Host"] ;
+    body = def_304;
+  }
+  else if (status == 400)
+    body = def_400;
 
+  else if (status == 403)
+    body = def_403;
+
+  else if (status == 404)
+    body = def_404;
+
+  else if (status == 405) {
+    body = def_405;
+    if ( location[prefix].checkMethod("GET"   )) { headers["Allow"] += " GET   "; }
+    if ( location[prefix].checkMethod("POST"  )) { headers["Allow"] += " POST  "; }
+    if ( location[prefix].checkMethod("DELETE")) { headers["Allow"] += " DELETE"; }
+  }
+
+  else if (status == 413) {
+      body = "<html><body><h1>413 Payload Too Large</h1><p>The uploaded file exceeds the maximum allowed size.</p></body></html>";
+  }
+
+  else if (status == 500)
+    body ="<html><body>500 Internal Server Error</body></html>";
+
+  else if (status == 501)
+    body ="<html><body>501 Not Implemented</body></html>";
+
+  else if (status == 504)
+    body = "<html><body>504 Gateway Timeout</body></html>";
+
+  else if (status == 204)
+    body ="";
+  else if (status == 201)
+    body ="";
+  oss << body.size();
+  headers["Content-Length"] = oss.str();
+
+  return (t_httpResponse(status, headers, body));
 }
 
 /* ========================================================================== */

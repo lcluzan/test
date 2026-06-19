@@ -6,7 +6,7 @@
 /*   By: tjacquel <tjacquel@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/22 11:31:58 by bchallat          #+#    #+#             */
-/*   Updated: 2026/06/18 22:53:29 by tjacquel         ###   ########.fr       */
+/*   Updated: 2026/06/19 14:03:23 by bchallat         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,11 +28,20 @@
 #include <sys/stat.h> // Pour stat()
 #include <unistd.h> // Pour access()
 #include <cerrno>   // Pour errno
+#include <dirent.h>   // Pour opendir(), readdir(), closedir()
 
 #include <log/colorLog.hpp>
 #include <request/struct.hpp>
 #include <config/LocationConfig.hpp>
 #include <config/ServerConfig.hpp>
+
+struct t_config {
+
+  LocationConfig                        config;
+  std::string                           prefix;
+  std::map<std::string, LocationConfig>	location;
+
+};
 
 class HttpHandler {
 
@@ -66,6 +75,27 @@ class HttpHandler {
     static std::vector<std::string> buildCgiEnv(const t_httpRequest& request, const std::string& filename, const std::string& script_name, const std::string& query_string, const ServerConfig& config);
     static std::vector<char*> stringsToCharPtrs(const std::vector<std::string>& strings);
     static void handleCgiChild(const std::string& path, const t_httpRequest& request, int pipe_in[2], int pipe_out[2], const ServerConfig& config, const std::string& interpreter, const LocationConfig& location);
+  
+  private:
+    static std::string    findAndOpenBody(int status, t_httpRequest request, const ServerConfig& config);
+    static void           setStructConfig(t_config directiv, const ServerConfig& serv, std::string path);
+
+    static t_httpResponse status_201(int status, t_httpResponse response);
+    static t_httpResponse status_204(int status, t_httpResponse response);
+
+    static t_httpResponse status_301(int status, t_httpRequest request, t_httpResponse response);
+    static t_httpResponse status_302(int status, t_httpRequest request, t_httpResponse response);
+    static t_httpResponse status_304(int status, t_httpRequest request, t_httpResponse response);
+
+    static t_httpResponse status_400(int status, t_httpResponse response);
+    static t_httpResponse status_403(int status, t_httpResponse response);
+    static t_httpResponse status_404(int status, t_httpResponse response);
+    static t_httpResponse status_405(int status, t_httpResponse response, t_config directiv);
+    static t_httpResponse status_413(int status, t_httpResponse response);
+
+    static t_httpResponse status_500(int status, t_httpResponse response);
+    static t_httpResponse status_501(int status, t_httpResponse response);
+    static t_httpResponse status_504(int status, t_httpResponse response);
 };
 
 # endif // !HTTPHANDLER_HPP

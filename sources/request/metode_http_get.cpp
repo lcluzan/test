@@ -73,42 +73,38 @@ bool isSafePath(const std::string& path)
 
 std::string getMimeType(const std::string& path)
 {
-    // Implémentez la logique pour déterminer le type
     if (path.find(".html") != std::string::npos) return ( "text/html" );
     if (path.find(".css") != std::string::npos) return ( "text/css" );
-    // Ajoutez d'autres types selon les besoins
+
     return ("text/plain");
 }
 
 t_httpResponse HttpHandler::serveStaticFile(const std::string& path, t_httpRequest& request, const ServerConfig& config)
 {
-    if (!isSafePath(path))
-    {
-      return (HandlerErrorHttp(403, request, config));
-    }
-    if (request.path.find("/") == std::string::npos)
-    {
-      return (HandlerErrorHttp(301, request, config));
-    }
+    t_httpResponse response;
+
+    if (!isSafePath(path)) 
+      return ( HandlerErrorHttp(403, request, config) );
+
+    if (request.path.find("/") == std::string::npos) 
+      return ( HandlerErrorHttp(301, request, config) );
+
     std::ifstream file(path.c_str(), std::ios::binary);
-    if (!file.is_open())
-    {
-      std::cout << COLOR_MAGENTA << path << ":" << COLOR_RESET << std::endl;
-      return (HandlerErrorHttp(404, request, config));
-    }
+
+    if (!file.is_open()) 
+      return ( HandlerErrorHttp(404, request, config) );
 
     std::stringstream buffer;
     buffer << file.rdbuf();
     std::string content = buffer.str();
 
-    t_httpResponse response;
     response.status = 200;
     response.headers["Content-Type"] = getMimeType(path);
     response.headers["Connection"] = "close";
     response.headers["Date"] = getCurrentHttpDate();
     response.body = content;
 
-    return (response);
+    return ( response );
 }
 
 /* ========================================================================== */
@@ -135,35 +131,30 @@ bool HttpHandler::isStaticFile(const std::string& path)
 {
     if (path.find("/static/") == 0 ||
         path.substr(path.find_last_of(".") + 1) == "html" ||
-        path.substr(path.find_last_of(".") + 1) == "css" ||
-        path.substr(path.find_last_of(".") + 1) == "js" ||
-        path.find_last_of(".") < path.size())
-    {
-        return true;
-    }
-    return false;
+        path.substr(path.find_last_of(".") + 1) == "css"  ||
+        path.substr(path.find_last_of(".") + 1) == "js"   ||
+        path.find_last_of(".") < path.size()               )  
+    { return ( true ); }
+    
+    return ( false );
 }
 
 /* ========================================================================== */
 /*                              -- AUTO INDEX --                              */
 /* ========================================================================== */
 
-#include <dirent.h>   // Pour opendir(), readdir(), closedir()
-#include <sys/stat.h> // Pour stat()
-#include <algorithm>  // Pour std::sort
-#include <ctime>      // Pour ctime()
-
-
-
 t_httpResponse HttpHandler::serveIndex(const std::string& path, t_httpRequest& request, const ServerConfig& config)
 {
     t_httpResponse response;
+
     response.status = 200;
     response.headers["Connection"] = "close";
     response.headers["Date"] = getCurrentHttpDate();
     response.body = HttpHandler::generateAutoIndexHTML(path);
+
     if (response.body.empty()) {
 
+      std::cout << COLOR_RED << "Error: faile on serve index" << COLOR_RESET << std::endl;
       return ( HandlerErrorHttp(500, request, config) );
     }
     //response.headers["Content-length"] = response.body.length();
@@ -181,12 +172,11 @@ std::string HttpHandler::generateAutoIndexHTML(const std::string& path) {
     std::vector<std::string> entries;
     struct dirent* entry;
 
-    // Lire tous les fichiers/dossiers
-    while ((entry = readdir(dir)) != NULL) {
-        // Ignorer "." et ".."
-        if (std::string(entry->d_name) != "." && std::string(entry->d_name) != "..") {
+    // Lire tous les fichiers/dossiers && Ignorer "." et ".."
+    while ((entry = readdir(dir)) != NULL) 
+    {
+        if (std::string(entry->d_name) != "." && std::string(entry->d_name) != "..")
             entries.push_back(entry->d_name);
-        }
     }
     closedir(dir);
 
