@@ -6,7 +6,7 @@
 /*   By: tjacquel <tjacquel@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/20 19:42:36 by lcluzan           #+#    #+#             */
-/*   Updated: 2026/06/11 17:18:17 by tjacquel         ###   ########.fr       */
+/*   Updated: 2026/06/19 01:22:09 by tjacquel         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,7 +24,7 @@ int										ServerConfig::getPort() const {
 	return (this->port);
 }
 
-int										ServerConfig::getClientMaxBodySize() const {
+size_t									ServerConfig::getClientMaxBodySize() const {
 	return (this->client_max_body_size);
 }
 
@@ -170,14 +170,14 @@ void	ServerConfig::cmbsDirCheckAndLoad(const std::vector<std::string>& curr_dir)
 	}
 
 	int				base_value = ft_stoi(arg)	;
-	unsigned long	final_value = static_cast<unsigned long>(base_value) * multiplier;
+	size_t			final_value = static_cast<size_t>(base_value) * multiplier;
 
 	if (final_value > CLIENT_MAX_BODY_SIZE_LIMIT) {
 		thw << "Config file error: client_max_body_size exceeds or is equal to 2GB maximum limit";
 		throw std::logic_error(thw.str());
 	}
 
-	this->client_max_body_size = static_cast<int>(final_value);
+	this->client_max_body_size = final_value;
 }
 
 void	ServerConfig::loadFromBlock(const t_block& curr_block) {

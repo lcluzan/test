@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   EventLoop.cpp                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: lcluzan <lcluzan@student.42.fr>            +#+  +:+       +#+        */
+/*   By: tjacquel <tjacquel@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/03/25 06:01:32 by bchallat          #+#    #+#             */
-/*   Updated: 2026/06/17 21:48:04 by lcluzan          ###   ########.fr       */
+/*   Updated: 2026/06/18 22:59:48 by tjacquel         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,6 +15,13 @@
 EventLoop::EventLoop(const std::vector<int>& ports) : _ports(ports) {}
 
 EventLoop::~EventLoop() { cleanup(); }
+
+EventLoop::CgiState::CgiState(int client_fd, pid_t cgi_pid, int read_fd, int write_fd,
+    const std::string& input_buffer, const t_httpRequest& req, const ServerConfig& config)
+        : client_fd(client_fd), cgi_pid(cgi_pid), cgi_read_fd(read_fd), cgi_write_fd(write_fd),
+        input_buffer(input_buffer), output_buffer(""), start_time(std::time(NULL)),
+        request(req), config(config) {
+}
 
 /* ************************************************************************** */
 
@@ -79,6 +86,14 @@ short EventLoop::getPollEvent(int i) const {
 
   return ( _poll_fds[i].revents );
 
+}
+
+std::string	EventLoop::getClientIP(int fd) const {
+	ClientInfo* client = _client_manager.getClient(fd);
+	if (client) {
+		return (client->getAdressIp());
+	}
+	return ("127.0.0.1");
 }
 
 /* ************************************************************************** */
@@ -154,11 +169,29 @@ void EventLoop::removeClient(int fd)
 
 void EventLoop::cleanup()
 {
+    // 1. Clean up running CGI scripts and pipes
+    for (std::map<int, CgiState>::iterator it = _cgi_contexts.begin(); it != _cgi_contexts.end(); ++it) {
+        // Kill the child process so it doesn't become an orphan
+        kill(it->second.cgi_pid, SIGKILL);
+        waitpid(it->second.cgi_pid, NULL, 0);
+
+        // Close the pipes
+        if (it->second.cgi_read_fd != -1) {
+            close(it->second.cgi_read_fd);
+        }
+        if (it->second.cgi_write_fd != -1) {
+            close(it->second.cgi_write_fd);
+        }
+    }
+    _cgi_contexts.clear();
+
+    // 2. Clean up Clients
   const std::vector<ClientInfo*>& clients = _client_manager.getClients();
   for (size_t i = 0; i < clients.size(); i++)
   {
     _client_manager.removeClient(clients[i]->getFileDescriptor());
   }
+  // 3. Clean up Server Sockets
   for (size_t i = 0; i < _server_fds.size(); i++)
   {
     _socket_handler.closeSocket(_server_fds[i]);
@@ -306,9 +339,9 @@ std::string EventLoop::getFullRequest(int fd) {
 }
 
 // 1. Register the pipe so poll() starts watching it for POLLIN
-void EventLoop::registerCgi(int client_fd, const t_httpResponse& response) {
+void EventLoop::registerCgi(int client_fd, const t_httpResponse& response, const t_httpRequest& req, const ServerConfig& config) {
 
-	CgiState	CgiContext(client_fd, response.cgi_pid, response.cgi_read_fd, response.cgi_write_fd, response.body);
+	CgiState	CgiContext(client_fd, response.cgi_pid, response.cgi_read_fd, response.cgi_write_fd, response.body, req, config);
 	_cgi_contexts[client_fd] = CgiContext; // Save the master state under the client_fd
 
 	// 1. Register the READ pipe (POLLIN)
@@ -500,8 +533,9 @@ void	EventLoop::checkCgiTimeout() {
 			}
 
 			// 3. Send a 504 Error to the client
-			std::string	error_response = "HTTP/1.1 504 Gateway Timeout\r\nConnection: close\r\nContent-Length: 22\r\n\r\n<h1>504 Timeout</h1>";
-			queueResponse(it->second.client_fd, error_response);
+            // return Http::HandlerErrorHttp(504, request, config);
+            t_httpResponse timeout_resp = HttpHandler::HandlerErrorHttp(504, it->second.request, it->second.config);
+			queueResponse(it->second.client_fd, timeout_resp.toString());
 			markClientForDisconnect(it->second.client_fd);
 
 			// 4. Erase the context and safely increment iterator

@@ -6,7 +6,7 @@
 /*   By: tjacquel <tjacquel@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/20 19:26:05 by lcluzan           #+#    #+#             */
-/*   Updated: 2026/06/11 17:17:33 by tjacquel         ###   ########.fr       */
+/*   Updated: 2026/06/19 01:22:51 by tjacquel         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,7 +41,7 @@ public:
 
 	std::string								getHost() const;
 	int										getPort() const;
-	int										getClientMaxBodySize() const;
+	size_t									getClientMaxBodySize() const;
 	std::map<std::string, LocationConfig>	getLocationConfig() const;
 
 
@@ -50,7 +50,7 @@ public:
 private:
 	std::string								host;
 	int										port;
-	int										client_max_body_size;
+	size_t									client_max_body_size;
 	std::map<std::string, LocationConfig>	location;
 
 } ;

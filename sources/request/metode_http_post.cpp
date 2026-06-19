@@ -29,7 +29,11 @@ t_httpResponse HttpHandler::handler_methode_post(t_httpRequest request, const Se
   std::string fullPath = location[prefix].getRoot() + request.path ;
   std::cout << COLOR_MAGENTA << "full path ? " + fullPath << COLOR_RESET << std::endl;
 
+  if (!request.path.empty() && fullPath[request.path.size() - 1] != '/')  { 
 
+      std::cout << COLOR_MAGENTA << " -> " + fullPath << COLOR_RESET << std::endl;
+      fullPath += "/"; 
+  }
   if (request.body.empty() || location[prefix].getRoot().empty()) {
 
     response.status = 404;

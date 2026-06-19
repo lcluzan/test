@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   HttpHandler.cpp                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: lcluzan <lcluzan@student.42.fr>            +#+  +:+       +#+        */
+/*   By: tjacquel <tjacquel@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/07 13:48:28 by bchallat          #+#    #+#             */
-/*   Updated: 2026/06/17 21:42:07 by lcluzan          ###   ########.fr       */
+/*   Updated: 2026/06/19 02:08:35 by tjacquel         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -69,6 +69,12 @@ t_httpResponse HttpHandler::setHttpResponse(t_httpRequest request, const ServerC
     return (HandlerErrorHttp(405, request, config));
   }
 
+
+  // Check client max body size
+  if (request.body.size() > config.getClientMaxBodySize()) {
+	return (HandlerErrorHttp(413, request, config));
+  }
+
   // New dynamic CGI location check
   std::string extension = "";
   size_t dot_pos = actual_path.find_last_of(".");
@@ -78,7 +84,22 @@ t_httpResponse HttpHandler::setHttpResponse(t_httpRequest request, const ServerC
   std::map<std::string, std::string> cgi_map = current_loc.getCgiPass();
   if (!extension.empty() && cgi_map.find(extension) != cgi_map.end()) {
     std::string interpreter = cgi_map[extension]; // e.g., "/usr/bin/php-cgi"
-    return HttpHandler::executeCgi(request.path, request, config, interpreter, current_loc);
+    if (!interpreter.empty()) {
+      std::string full_script_path = current_loc.getRoot() + actual_path;
+
+      // F_OK checks if the file exists.
+      if (access(full_script_path.c_str(), F_OK) !=0) {
+        return HandlerErrorHttp(404, request, config);
+      }
+
+      // R_OK checks if we have permission to read the file.
+      if (access(full_script_path.c_str(), R_OK) != 0) {
+        return HandlerErrorHttp(403, request, config);
+      }
+
+      // If it exists and is readable, we safely execute the CGI
+      return HttpHandler::executeCgi(request.path, request, config, interpreter, current_loc);
+    }
   }
 
   else if (request.method == "GET")
@@ -112,14 +133,15 @@ t_httpResponse HttpHandler::HandlerErrorHttp(int status, t_httpRequest request, 
   std::string                         body;
 
   std::map<std::string, LocationConfig>	location = config.getLocationConfig();
-  std::map<int, std::string>            page = location["/"].getErrorPage();
+  std::string prefix = find_location(location, request.path);
+  std::map<int, std::string>            page = location[prefix].getErrorPage();
   //std::set<std::string>                 allow = location["/"].getMethods();
 
   headers["Date"] = getCurrentHttpDate();
   headers["Connection"] = "close";
   headers["Content-Type"] = "text/html";
 
-  std::string open = location["/"].getRoot() + "/" + page[status];
+  std::string open = location[prefix].getRoot() + "/" + page[status];
   std::ifstream file(open.c_str(), std::ios::binary);
   std::ostringstream oss;
 
@@ -153,19 +175,27 @@ t_httpResponse HttpHandler::HandlerErrorHttp(int status, t_httpRequest request, 
 
   else if (status == 405) {
     body = def_405;
-    if ( location["/"].checkMethod("GET"))  { headers["Allow"] += " GET   "; }
-    if ( location["/"].checkMethod("POST")) { headers["Allow"] += " POST  "; }
-    if ( location["/"].checkMethod("POST")) { headers["Allow"] += " DELETE"; }
+    if ( location[prefix].checkMethod("GET"   )) { headers["Allow"] += " GET   "; }
+    if ( location[prefix].checkMethod("POST"  )) { headers["Allow"] += " POST  "; }
+    if ( location[prefix].checkMethod("DELETE")) { headers["Allow"] += " DELETE"; }
   }
+
+  else if (status == 413) {
+      body = "<html><body><h1>413 Payload Too Large</h1><p>The uploaded file exceeds the maximum allowed size.</p></body></html>";
+  }
+
   else if (status == 500)
     body ="<html><body>500 Internal Server Error</body></html>";
 
   else if (status == 501)
     body ="<html><body>501 Not Implemented</body></html>";
 
+  else if (status == 504)
+    body = "<html><body>504 Gateway Timeout</body></html>";
+
   else if (status == 204)
     body ="";
-    else if (status == 201)
+  else if (status == 201)
     body ="";
   oss << body.size();
   headers["Content-Length"] = oss.str();

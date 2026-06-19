@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   struct.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: lcluzan <lcluzan@student.42.fr>            +#+  +:+       +#+        */
+/*   By: tjacquel <tjacquel@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/27 13:55:25 by bchallat          #+#    #+#             */
-/*   Updated: 2026/06/09 18:11:32 by lcluzan          ###   ########.fr       */
+/*   Updated: 2026/06/18 22:49:07 by tjacquel         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -53,6 +53,7 @@ struct t_httpRequest {
   std::map<std::string, std::string> headers;
   std::string                        body;
 
+  std::string						client_ip; // for CGI
 };
 
 struct t_httpResponse {

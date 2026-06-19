@@ -3,16 +3,16 @@
 /*                                                        :::      ::::::::   */
 /*   LocationConfig.cpp                                 :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: lcluzan <lcluzan@student.42.fr>            +#+  +:+       +#+        */
+/*   By: tjacquel <tjacquel@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/23 17:23:36 by tjacquel          #+#    #+#             */
-/*   Updated: 2026/06/17 20:05:48 by lcluzan          ###   ########.fr       */
+/*   Updated: 2026/06/19 00:39:40 by tjacquel         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include <config/LocationConfig.hpp>
 
-LocationConfig::LocationConfig() : root(""), autoindex(false), upload_enable(false), redirect(0, "") { }
+LocationConfig::LocationConfig() : root("."), index("index.html"), autoindex(false), upload_enable(false), redirect(0, "") { }
 
 LocationConfig::~LocationConfig() { }
 
@@ -109,6 +109,9 @@ bool	LocationConfig::isValidCgiPair(const std::string& extension, const std::str
 		return true;
 	}
 	if (extension == ".sh" && executable.find("bash") != std::string::npos) {
+		return true;
+	}
+	if (extension == ".bla" && executable.find("cgi_tester") != std::string::npos) {
 		return true;
 	}
 	return (false);
@@ -309,7 +312,7 @@ void	LocationConfig::rootDirCheckAndLoad(const std::vector<std::string>& rootDir
 		thw << "Config file error: single mandatory argument expected for root directive, found " << rootDirective.size() - 1;
 		throw std::logic_error(thw.str());
 	}
-	if (root != "") {
+	if (root != ".") {
 		thw << "Config file error: duplicate root directive found";
 		throw std::logic_error(thw.str());
 	}
