@@ -6,7 +6,7 @@
 #    By: tjacquel <tjacquel@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2026/02/20 09:10:14 by bchallat          #+#    #+#              #
-#    Updated: 2026/06/11 16:48:17 by bchallat         ###   ########.fr        #
+#    Updated: 2026/06/19 12:52:54 by bchallat         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -64,6 +64,7 @@ SRC_REQUEST		=	request/HttpHandler.cpp \
 								request/metode_http_get.cpp \
 								request/metode_http_post.cpp \
 								request/metode_http_delete.cpp \
+								request/HttpStatusCode.cpp \
 
 SRCS = ${addprefix ${SRCDIR}/, ${SRC}}
 OBJS = ${addprefix ${OBJDIR}/, $(SRC:.cpp=.o)}
