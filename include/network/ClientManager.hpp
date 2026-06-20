@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ClientManager.hpp                                  :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: tjacquel <tjacquel@student.42.fr>          +#+  +:+       +#+        */
+/*   By: lcluzan <lcluzan@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/03/25 06:30:07 by bchallat          #+#    #+#             */
-/*   Updated: 2026/04/17 15:47:41 by tjacquel         ###   ########.fr       */
+/*   Updated: 2026/06/20 04:11:55 by lcluzan          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,8 +20,8 @@
 #include <iostream>
 #include <algorithm>
 
-#include "ClientInfo.hpp"
-#include "./../log/colorLog.hpp"
+#include <network/ClientInfo.hpp>
+#include <log/colorLog.hpp>
 
 class ClientManager {
 

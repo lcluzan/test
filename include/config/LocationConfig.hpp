@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   LocationConfig.hpp                                 :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: lcluzan <lcluzan@student.42.fr>            +#+  +:+       +#+        */
+/*   By: tjacquel <tjacquel@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/23 17:24:59 by tjacquel          #+#    #+#             */
-/*   Updated: 2026/06/17 20:01:19 by lcluzan          ###   ########.fr       */
+/*   Updated: 2026/06/19 22:27:03 by tjacquel         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -42,7 +42,6 @@ public:
 	void						redirectDirCheckAndLoad(const std::vector<std::string>& returnDir);
 	void						errorpageDirCheckAndLoad(const std::vector<std::string>& error_pageDir);
 	void						parseCgiPass(const std::vector<std::string>& cgiPassDir);
-	bool						isValidCgiPair(const std::string& extension, const std::string executable) const;
 
 
 	// Getter methods

@@ -6,7 +6,7 @@
 /*   By: tjacquel <tjacquel@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/23 17:23:36 by tjacquel          #+#    #+#             */
-/*   Updated: 2026/06/19 00:39:40 by tjacquel         ###   ########.fr       */
+/*   Updated: 2026/06/20 03:37:53 by tjacquel         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -101,22 +101,6 @@ void	LocationConfig::printLocationConfig() const {
 	}
 }
 
-bool	LocationConfig::isValidCgiPair(const std::string& extension, const std::string executable) const {
-	if (extension == ".py" && executable.find("python3") != std::string::npos) {
-		return true;
-	}
-	if (extension == ".php" && executable.find("php-cgi") != std::string::npos) {
-		return true;
-	}
-	if (extension == ".sh" && executable.find("bash") != std::string::npos) {
-		return true;
-	}
-	if (extension == ".bla" && executable.find("cgi_tester") != std::string::npos) {
-		return true;
-	}
-	return (false);
-}
-
 void	LocationConfig::parseCgiPass(const std::vector<std::string>& cgiPassDir) {
 	std::ostringstream	thw;
 	if (cgiPassDir.size() != 3) {
@@ -133,13 +117,7 @@ void	LocationConfig::parseCgiPass(const std::vector<std::string>& cgiPassDir) {
 		throw std::logic_error(thw.str());
 	}
 
-	// 2. Valid pair check
-	if (!isValidCgiPair(extension, executable)) {
-		thw << "Config file error: `" << extension << "-" << executable << "` extension-executable pair found is not supported for cgi_pass directive";
-		throw std::logic_error(thw.str());
-	}
-
-	// 3. Existence and permission check
+	// 2. Existence and permission check
 	if (access(executable.c_str(), X_OK) != 0) {
 		thw << "Config file error: CGI executable not found or missing execution rights at `" << executable << "`";
 		throw std::runtime_error(thw.str());
@@ -211,8 +189,8 @@ void	LocationConfig::redirectDirCheckAndLoad(const std::vector<std::string>& ret
 	code = ft_stoi(returnDir.at(1));
 
 	// Status code value check
-	if (code < 300 || code > 399) {
-		thw << "Config file error: redirect status code value must be within 300 and 399, found " << code;
+	if (code != 301 && code != 302) {
+		thw << "Config file error: redirect status code must be 301 or 302, found " << code;
 		throw std::logic_error(thw.str());
 	}
 
@@ -294,14 +272,10 @@ void	LocationConfig::methodsDirCheckAndLoad(const std::vector<std::string>& curr
 		else if (curr_dir.at(i) == "DELETE") {
 			methods.insert("DELETE");
 		}
-		// else if (curr_dir.at(i) == "UPLOAD") {
-		// 	methods.push_back("UPLOAD");
-		// }
 		else {
 			thw << "Config file error: `" << curr_dir.at(i) << "` found in methods directive is unsupported";
 			throw std::logic_error(thw.str());
 		}
-		// methods.insert(curr_dir.at(i));
 	}
 }
 

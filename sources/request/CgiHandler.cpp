@@ -3,20 +3,15 @@
 /*                                                        :::      ::::::::   */
 /*   CgiHandler.cpp                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: tjacquel <tjacquel@student.42.fr>          +#+  +:+       +#+        */
+/*   By: lcluzan <lcluzan@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/17 15:32:15 by lcluzan           #+#    #+#             */
-/*   Updated: 2026/06/18 22:55:52 by tjacquel         ###   ########.fr       */
+/*   Updated: 2026/06/20 03:59:33 by lcluzan          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include <request/HttpHandler.hpp>
 #include <webserver.hpp>
-#include <unistd.h>
-#include <sys/wait.h>
-#include <cstring>
-#include <cstdlib>
-#include <sstream>
 
 std::vector<std::string> HttpHandler::buildCgiEnv(const t_httpRequest& request, const std::string& filename, const std::string& script_name, const std::string& query_string, const ServerConfig& config) {
     std::vector<std::string> env;

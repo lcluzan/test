@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   HttpStatusCode.cpp                                 :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: bchallat <bchallat@student.42.fr>          +#+  +:+       +#+        */
+/*   By: tjacquel <tjacquel@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/19 12:29:21 by bchallat          #+#    #+#             */
-/*   Updated: 2026/06/19 13:59:08 by bchallat         ###   ########.fr       */
+/*   Updated: 2026/06/20 05:41:35 by tjacquel         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,27 +43,29 @@ response.headers["Content-Type"]   = "text/html";
 
 /* ================================ ~CODE 3XX ====================================== */
 
-t_httpResponse HttpHandler::status_301(int status, t_httpRequest request, t_httpResponse response)
+t_httpResponse HttpHandler::status_301(int status, t_httpRequest request, t_httpResponse response, std::string redirURI)
 {
   std::ostringstream oss;
 
   if (response.body.empty()) {
 
-  response.body =  def_301;std::ostringstream oss;
-oss << response.body.size();
+  response.body =  def_301;
   }
+  	if (!redirURI.empty() && redirURI[0] != '/') {
+		redirURI.insert(0, "/");
+	}
   oss << response.body.size();
 response.headers["Content-Length"] = oss.str();
 
 response.headers["Date"]           = getCurrentHttpDate();
-response.headers["Location"]       = "http://" + request.headers["Host"] ;
+response.headers["Location"]       = "http://" + request.headers["Host"] + redirURI;
 response.headers["Connection"]     = "close";
 response.headers["Content-Type"]   = "text/html";
 
   return (t_httpResponse(status, response.headers, response.body));
 }
 
-t_httpResponse HttpHandler::status_302(int status, t_httpRequest request, t_httpResponse response)
+t_httpResponse HttpHandler::status_302(int status, t_httpRequest request, t_httpResponse response, std::string redirURI)
 {
   std::ostringstream oss;
 
@@ -71,18 +73,22 @@ t_httpResponse HttpHandler::status_302(int status, t_httpRequest request, t_http
 
   response.body =  def_302;
   }
+	if (!redirURI.empty() && redirURI[0] != '/') {
+		redirURI.insert(0, "/");
+	}
+
   oss << response.body.size();
 response.headers["Content-Length"] = oss.str();
 
 response.headers["Date"]           = getCurrentHttpDate();
-response.headers["Location"]       = "http://" + request.headers["Host"] ;
+response.headers["Location"]       = "http://" + request.headers["Host"] + redirURI;
 response.headers["Connection"]     = "close";
 response.headers["Content-Type"]   = "text/html";
 
   return (t_httpResponse(status, response.headers, response.body));
 }
 
-t_httpResponse HttpHandler::status_304(int status, t_httpRequest request, t_httpResponse response)
+t_httpResponse HttpHandler::status_304(int status, t_httpRequest request, t_httpResponse response, std::string redirURI)
 {
   std::ostringstream oss;
 
@@ -90,11 +96,14 @@ t_httpResponse HttpHandler::status_304(int status, t_httpRequest request, t_http
 
   response.body =  def_304;
   }
+  	if (!redirURI.empty() && redirURI[0] != '/') {
+		redirURI.insert(0, "/");
+	}
   oss << response.body.size();
 response.headers["Content-Length"] = oss.str();
 
 response.headers["Date"]           = getCurrentHttpDate();
-response.headers["Location"]       = "http://" + request.headers["Host"] ;
+response.headers["Location"]       = "http://" + request.headers["Host"] + redirURI;
 response.headers["Connection"]     = "close";
 response.headers["Content-Type"]   = "text/html";
 
@@ -171,7 +180,7 @@ response.headers["Content-Length"] = oss.str();
 response.headers["Date"]           = getCurrentHttpDate();
 response.headers["Connection"]     = "close";
 response.headers["Content-Type"]   = "text/html";
-  
+
   if ( directiv.location[directiv.prefix].checkMethod("GET"   )) { response.headers["Allow"] += " GET   "; }
   if ( directiv.location[directiv.prefix].checkMethod("POST"  )) { response.headers["Allow"] += " POST  "; }
   if ( directiv.location[directiv.prefix].checkMethod("DELETE")) { response.headers["Allow"] += " DELETE"; }
@@ -234,7 +243,23 @@ response.headers["Content-Type"]   = "text/html";
 
   return (t_httpResponse(status, response.headers, response.body));
 }
+t_httpResponse HttpHandler::status_502(int status, t_httpResponse response)
+{
+  std::ostringstream oss;
 
+  if (response.body.empty()) {
+
+  response.body =  "<html><body>502 Bad Gateway</body></html>";
+  }
+  oss << response.body.size();
+response.headers["Content-Length"] = oss.str();
+
+response.headers["Date"]           = getCurrentHttpDate();
+response.headers["Connection"]     = "close";
+response.headers["Content-Type"]   = "text/html";
+
+  return (t_httpResponse(status, response.headers, response.body));
+}
 t_httpResponse HttpHandler::status_504(int status, t_httpResponse response)
 {
   std::ostringstream oss;

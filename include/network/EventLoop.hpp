@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   EventLoop.hpp                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: tjacquel <tjacquel@student.42.fr>          +#+  +:+       +#+        */
+/*   By: lcluzan <lcluzan@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/03/25 06:29:31 by bchallat          #+#    #+#             */
-/*   Updated: 2026/06/18 22:49:49 by tjacquel         ###   ########.fr       */
+/*   Updated: 2026/06/20 04:08:00 by lcluzan          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -44,11 +44,12 @@ class EventLoop {
   public:
     int               waitForActivity();
     bool              isServerFd(int fd) const;
+    short             getPollEvent(int i) const;
     ssize_t           readFromClient(int fd, char* buffer, size_t size);
     ClientInfo*       acceptNewConnection(int server_fd);
     std::vector<int>  getActiveFds() const;
-    short             getPollEvent(int i) const;
-	std::string			getClientIP(int fd) const;
+
+	  std::string         getClientIP(int fd) const;
 
   public:
     void registerCgi(int client_fd, const t_httpResponse& response, const t_httpRequest& request, const ServerConfig& config);
@@ -97,7 +98,7 @@ class EventLoop {
     void queueResponse(int fd, const std::string& response);
     void handlePendingWrites(int fd);
 
-	void markClientForDisconnect(int fd);
+    void markClientForDisconnect(int fd);
 
   private:
     std::map<int, std::string> _pendingResponses;  // Buffer des réponses
@@ -110,7 +111,7 @@ class EventLoop {
     // ...
     std::map<int, std::string> _clientBuffers;  // fd → données accumulées
     std::map<int, size_t> _clientContentLength; // fd → Content-Length attendu
-    std::map<int, bool> _clientHeadersEnded;    // fd → headers terminés ?
+    std::map<int, bool> _clientHeadersEnded;    // fd → headers terminés
 public:
     // ...
     void appendToClientBuffer(int fd, const std::string& data);

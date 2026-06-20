@@ -3,10 +3,10 @@
 #                                                         :::      ::::::::    #
 #    Makefile                                           :+:      :+:    :+:    #
 #                                                     +:+ +:+         +:+      #
-#    By: tjacquel <tjacquel@student.42.fr>          +#+  +:+       +#+         #
+#    By: lcluzan <lcluzan@student.42.fr>            +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2026/02/20 09:10:14 by bchallat          #+#    #+#              #
-#    Updated: 2026/06/19 12:52:54 by bchallat         ###   ########.fr        #
+#    Updated: 2026/06/20 04:32:25 by lcluzan          ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -58,12 +58,12 @@ SRC_NETWORCK	=	network/SocketHandler.cpp\
 								network/EventLoop.cpp \
 
 SRC_REQUEST		=	request/HttpHandler.cpp \
-								request/parsing_HttpHandler.cpp \
-								request/response_HttpHandler.cpp \
-								request/CgiHandler.cpp \
-								request/metode_http_get.cpp \
-								request/metode_http_post.cpp \
-								request/metode_http_delete.cpp \
+								request/parsingHttpHandler.cpp \
+								request/responseHttpHandler.cpp \
+								request/cgiHandler.cpp \
+								request/methodHttpGet.cpp \
+								request/methodHttpPost.cpp \
+								request/methodHttpDelete.cpp \
 								request/HttpStatusCode.cpp \
 
 SRCS = ${addprefix ${SRCDIR}/, ${SRC}}
@@ -106,5 +106,5 @@ fclean:
 
 re: fclean all
 
-.PHONY: all clean fclean re 
+.PHONY: all clean fclean re
 

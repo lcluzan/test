@@ -46,7 +46,7 @@ t_httpResponse HttpHandler::handler_methode_post(t_httpRequest request, const Se
   } else if (request.path.find(prefix) != std::string::npos) {
 
     parsing = HttpHandler::post_parse_header_request(request);
-    if (parsing.body.empty())  {
+    if (parsing.body.empty() && parsing.nameFile.empty())  {
       
       body = request.body;
       link = fullPath;
@@ -60,7 +60,7 @@ t_httpResponse HttpHandler::handler_methode_post(t_httpRequest request, const Se
 
 
     std::ofstream fichier(link.c_str());
-    if (parsing.body.empty() || fichier.is_open())
+    if (!parsing.body.empty() || !parsing.nameFile.empty() || fichier.is_open())
     {
       fichier << body;
       fichier.close();
@@ -73,7 +73,7 @@ t_httpResponse HttpHandler::handler_methode_post(t_httpRequest request, const Se
 
       //response.headers = parsing.headers;
       
-      std::cout << COLOR_GREEN << "Success : Created file " << fullPath + parsing.nameFile << COLOR_RESET << std::endl;
+      std::cout << COLOR_GREEN << "Success : Created file " << fullPath <<"|"<< parsing.nameFile.empty() << COLOR_RESET << std::endl;
       return (HandlerErrorHttp(response.status, request, config));
     }
     else 
@@ -256,7 +256,7 @@ t_post_methode HttpHandler::post_parse_header_request(t_httpRequest request)
   if ((parsing.headers = post_hastable_header(request)).empty())
     return( parsing );
 
-  if ((parsing.nameFile = post_name_file( parsing)).empty())
+  if ((parsing.nameFile = post_name_file(parsing)).empty())
     return ( parsing );
 
   parsing.body = request.body;

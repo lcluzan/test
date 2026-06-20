@@ -6,7 +6,7 @@
 /*   By: lcluzan <lcluzan@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/02/25 17:24:16 by bchallat          #+#    #+#             */
-/*   Updated: 2026/06/19 14:43:07 by lcluzan          ###   ########.fr       */
+/*   Updated: 2026/06/20 03:40:09 by lcluzan          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -282,10 +282,20 @@ void print_http_response(const t_httpResponse& response) {
     std::cout << "Status: " << COLOR_YELLOW << response.status << COLOR_RESET;
     switch (response.status) {
         case 200: std::cout << " (OK)"; break;
+        case 201: std::cout << " (Created)"; break;
+        case 204: std::cout << " (No Content)"; break;
+        case 301: std::cout << " (Moved Permanently)"; break;
+        case 302: std::cout << " (Found)"; break;
+        case 304: std::cout << " (Not Modified)"; break;
         case 400: std::cout << " (Bad Request)"; break;
         case 403: std::cout << " (Forbidden)"; break;
         case 404: std::cout << " (Not Found)"; break;
+        case 405: std::cout << " (Method Not Allowed)"; break;
+        case 413: std::cout << " (Payload Too Large)"; break;
+        case 500: std::cout << " (Internal Server Error)"; break;
         case 501: std::cout << " (Not Implemented)"; break;
+        case 502: std::cout << " (Bad Gateway)"; break;
+        case 504: std::cout << " (Gateway Timeout)"; break;
         default: std::cout << " (Unknown Status)"; break;
     }
     std::cout << COLOR_RESET << std::endl;
