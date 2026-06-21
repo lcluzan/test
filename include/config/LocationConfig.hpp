@@ -6,7 +6,7 @@
 /*   By: tjacquel <tjacquel@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/23 17:24:59 by tjacquel          #+#    #+#             */
-/*   Updated: 2026/06/19 22:27:03 by tjacquel         ###   ########.fr       */
+/*   Updated: 2026/06/20 21:20:12 by tjacquel         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,8 +37,6 @@ public:
 	void						methodsDirCheckAndLoad(const std::vector<std::string>& curr_dir);
 	void						indexDirCheckAndLoad(const std::vector<std::string>& indexDir);
 	void						autoindexDirCheckAndLoad(const std::vector<std::string>& autoindexDir);
-	void						uploadenbableDirCheckAndLoad(const std::vector<std::string>& upload_enableDir);
-	void						uploadlocDirCheckAndLoad(const std::vector<std::string>& upload_locDir);
 	void						redirectDirCheckAndLoad(const std::vector<std::string>& returnDir);
 	void						errorpageDirCheckAndLoad(const std::vector<std::string>& error_pageDir);
 	void						parseCgiPass(const std::vector<std::string>& cgiPassDir);
@@ -49,8 +47,6 @@ public:
 	std::set<std::string>				getMethods() const;
 	std::string							getIndex() const;
 	bool								getAutoindex() const;
-	bool								getUploadEnable() const;
-	std::string							getUploadLoc() const;
 	std::pair<int, std::string>			getRedirect() const;
 	std::map<int, std::string>			getErrorPage() const;
 	std::map<std::string, std::string>	getCgiPass() const;
@@ -65,8 +61,6 @@ private:
 	std::set<std::string>				methods; // USAGE: if (this->methods.find("POST") != this->methods.end()) { // POST is allowed! [...] }
 	std::string							index;
 	bool								autoindex;
-	bool								upload_enable;
-	std::string							upload_loc;
 	std::pair<int, std::string>			redirect;
 	std::map<int, std::string>			error_page;
 	std::map<std::string, std::string>	cgi_pass; // KEY=extension, VALUE=executable

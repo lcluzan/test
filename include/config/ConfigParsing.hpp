@@ -6,7 +6,7 @@
 /*   By: tjacquel <tjacquel@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/23 17:51:28 by tjacquel          #+#    #+#             */
-/*   Updated: 2026/06/11 14:48:09 by tjacquel         ###   ########.fr       */
+/*   Updated: 2026/06/20 21:25:28 by tjacquel         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,8 +16,8 @@
 # include <string>
 # include <vector>
 
-# define PRINT				1
-# define RUN_WITH_SERVER	1
+# define PRINT_SERVER_CONFIG 1
+# define PRINT_TOKEN_CONFIG  0
 
 
 class ServerConfig;
@@ -29,7 +29,7 @@ typedef struct	s_block {
 	std::vector<s_block>					embed_block;
 }				t_block ;
 
-void	confParsingHandler(const char* filepath, std::vector<ServerConfig>& virtual_servers);
+void	confParsingHandler(const char* filepath, std::vector<ServerConfig>& server);
 
 
 #endif

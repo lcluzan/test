@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   HttpHandler.hpp                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: tjacquel <tjacquel@student.42.fr>          +#+  +:+       +#+        */
+/*   By: lcluzan <lcluzan@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/22 11:31:58 by bchallat          #+#    #+#             */
-/*   Updated: 2026/06/20 05:41:17 by tjacquel         ###   ########.fr       */
+/*   Updated: 2026/06/20 18:01:11 by lcluzan          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -80,6 +80,8 @@ class HttpHandler {
     static void                     handleCgiChild(const std::string& path, const t_httpRequest& request, int pipe_in[2], int pipe_out[2], const ServerConfig& config, const std::string& interpreter, const LocationConfig& location);
 
     static t_httpResponse           cgiConditionForExecute(const ServerConfig& config, t_httpRequest request, std::string actual_path , std::map<std::string, std::string> cgi_map, std::string extension, LocationConfig current_loc );
+    // Cookies
+    static std::map<std::string, int> _sessions;
 
   private:
     static std::string      findAndOpenBody(int status, t_httpRequest request, const ServerConfig& config);
@@ -100,6 +102,13 @@ class HttpHandler {
     static t_httpResponse status_501(int status, t_httpResponse response);
     static t_httpResponse status_502(int status, t_httpResponse response);
     static t_httpResponse status_504(int status, t_httpResponse response);
+
+    static std::string unchunkBody(const std::string& chuncked_body);
+
+    // Cookie helpers
+    static std::string getCookieValue(const std::string& cookieHeader, const std::string& cookieName);
+    static std::string generateSessionId();
+    static void        handleSession(const t_httpRequest& request, t_httpResponse& response);
 };
 
 # endif // !HTTPHANDLER_HPP

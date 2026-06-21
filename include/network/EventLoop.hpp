@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   EventLoop.hpp                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: lcluzan <lcluzan@student.42.fr>            +#+  +:+       +#+        */
+/*   By: tjacquel <tjacquel@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/03/25 06:29:31 by bchallat          #+#    #+#             */
-/*   Updated: 2026/06/20 04:08:00 by lcluzan          ###   ########.fr       */
+/*   Updated: 2026/06/20 15:13:45 by tjacquel         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -111,7 +111,9 @@ class EventLoop {
     // ...
     std::map<int, std::string> _clientBuffers;  // fd → données accumulées
     std::map<int, size_t> _clientContentLength; // fd → Content-Length attendu
-    std::map<int, bool> _clientHeadersEnded;    // fd → headers terminés
+    std::map<int, bool> _clientHeadersEnded;    // fd → headers terminés ?
+    std::map<int, bool> _clientIsChunked;
+
 public:
     // ...
     void appendToClientBuffer(int fd, const std::string& data);
